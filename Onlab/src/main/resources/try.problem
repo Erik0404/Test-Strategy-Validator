@@ -1,0 +1,6 @@
+pred hasZeroSpeed(Train t) <-> trainEvent(t, e), Arrival(e), arrSpeed(e, speed), ZeroSpeed(speed).
+
+error noStandstillBubbleWithinZeroSpeed(Train t, Port p) <-> 
+    hasZeroSpeed(t),
+    isTargetPort(p),
+    !hasStandstill(p).

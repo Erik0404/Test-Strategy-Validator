@@ -1,0 +1,387 @@
+% Metamodel
+
+class Train{
+    contains System[1] software
+    contains Platform[] platformList
+    contains Event[1] trainEvent
+    Platform currentPlatform
+}
+
+class OdometryData.
+
+class System {
+    contains Component[] SystemComponents
+    contains OnBoardComputer[2] redundantObc
+    contains OdometryData[1..2] systemOdometryData
+    contains Bubble[] systemBubbles
+}
+
+abstract class Component {
+     contains Port[1] ComponentPorts opposite parent
+}
+
+class OperationScreen extends Component.
+class TrainManagementComponent extends Component.
+class PassengerInformationComponent extends Component.
+class Wayside extends Component.
+
+abstract class ObcComponent{
+    contains obcPort[1] obcPorts opposite obcParent
+}
+class ProtectionComponent extends ObcComponent.
+class OperationComponent extends ObcComponent.
+class ControlScreen extends ObcComponent.
+class OdometryValue{
+    OdometryData[1] measuredData
+}
+
+class obcPort{
+    ObcComponent obcParent opposite obcPorts
+    Bubble[] obcAllowedBubbles
+    obcPort[] obcConnectedTo opposite obcConnectedTo
+}
+
+class OnBoardComputer{
+    contains Port[1] onBoardComputerPort opposite onBoardComputerParent
+    contains ProtectionComponent[1] obcProtection
+    contains OperationComponent[1] obcOperation
+    contains ControlScreen[1] obcScreen
+    contains OdometryValue[1] odometryCalcA
+    contains OdometryValue[1] odometryCalcB
+}
+
+class Port {
+    Component parent opposite ComponentPorts
+    OnBoardComputer onBoardComputerParent opposite onBoardComputerPort
+    Bubble[] allowedBubbles
+    Port[] connectedTo opposite connectedTo
+}
+
+abstract class Bubble.
+abstract class CyclicBubble extends Bubble.
+abstract class EventBubble extends Bubble.
+
+class ProtectionStatus extends CyclicBubble.
+class ArrivalEvent extends EventBubble.
+class DepartureEvent extends EventBubble.
+class StandstillBubble extends EventBubble.
+
+class Platform.
+
+abstract class Speed.
+class ZeroSpeed extends Speed.
+class MovingSpeed extends Speed.
+
+abstract class StoppingWindowStatus.
+class WithinStoppingWindow extends StoppingWindowStatus.
+class OutsideStoppingWindow extends StoppingWindowStatus.
+
+abstract class DoorState.
+class DoorsOpen extends DoorState.
+class DoorsClosed extends DoorState.
+
+abstract class Event.
+
+class Arrival extends Event {
+    contains ZeroSpeed[1] arrSpeed
+    contains WithinStoppingWindow[1] arrWindow
+    contains DoorsOpen[1] arrDoors
+}
+
+class Departure extends Event{
+    contains MovingSpeed[1] depSpeed
+    contains OutsideStoppingWindow[1] depWindow
+    contains DoorsClosed[1] depDoors
+}
+
+
+Train(t1).
+System(sys1).
+software(t1, sys1).
+
+Platform(p1).
+Platform(p2).
+Platform(p3).
+Platform(p4).
+Platform(p5).
+
+platformList(t1, p1).
+platformList(t1, p2).
+platformList(t1, p3).
+platformList(t1, p4).
+platformList(t1, p5).
+
+currentPlatform(t1, p1).
+
+OnBoardComputer(NearObcu).
+OnBoardComputer(FarObcu).
+redundantObc(sys1, NearObcu).
+redundantObc(sys1, FarObcu).
+
+OdometryData(NearOd).
+OdometryData(FarOd).
+systemOdometryData(sys1, NearOd).
+systemOdometryData(sys1, FarOd).
+
+OperationScreen(screen).
+TrainManagementComponent(TMC).
+PassengerInformationComponent(PIC).
+Wayside(WCU1).
+Wayside(WCU2).
+
+Port(screenPort).
+Port(TMCPort).
+Port(PICPort).
+Port(WCU1Port).
+Port(WCU2Port).
+Port(NearObcuPort).
+Port(FarObcuPort).
+ComponentPorts(screen, screenPort).
+ComponentPorts(TMC, TMCPort).
+ComponentPorts(PIC, PICPort).
+ComponentPorts(WCU1, WCU1Port).
+ComponentPorts(WCU2, WCU2Port).
+onBoardComputerPort(NearObcu, NearObcuPort).
+onBoardComputerPort(FarObcu, FarObcuPort).
+
+parent(screenPort, screen).
+parent(TMCPort, TMC).
+parent(PICPort, PIC).
+parent(WCU1Port, WCU1).
+parent(WCU2Port, WCU2).
+onBoardComputerParent(NearObcuPort, NearObcu).
+onBoardComputerParent(FarObcuPort, FarObcu).
+
+connectedTo(screenPort, NearObcuPort).
+connectedTo(NearObcuPort, screenPort).
+
+connectedTo(TMCPort, NearObcuPort).
+connectedTo(NearObcuPort, TMCPort).
+
+connectedTo(PICPort, NearObcuPort).
+connectedTo(NearObcuPort, PICPort).
+
+connectedTo(WCU1Port, NearObcuPort).
+connectedTo(NearObcuPort, WCU1Port).
+
+connectedTo(WCU2Port, NearObcuPort).
+connectedTo(NearObcuPort, WCU2Port).
+
+connectedTo(screenPort, FarObcuPort).
+connectedTo(FarObcuPort, screenPort).
+
+connectedTo(TMCPort, FarObcuPort).
+connectedTo(FarObcuPort, TMCPort).
+
+connectedTo(PICPort, FarObcuPort).
+connectedTo(FarObcuPort, PICPort).
+
+connectedTo(WCU1Port, FarObcuPort).
+connectedTo(FarObcuPort, WCU1Port).
+
+connectedTo(WCU2Port, FarObcuPort).
+connectedTo(FarObcuPort, WCU2Port).
+
+SystemComponents(sys1, screen).
+SystemComponents(sys1, TMC).
+SystemComponents(sys1, PIC).
+SystemComponents(sys1, WCU1).
+SystemComponents(sys1, WCU2).
+
+ProtectionComponent(NearAtp).
+ProtectionComponent(FarAtp).
+obcProtection(NearObcu, NearAtp).
+obcProtection(FarObcu, FarAtp).
+obcPort(NearAtpPort).
+obcPort(FarAtpPort).
+
+obcPorts(NearAtp, NearAtpPort).
+obcPorts(FarAtp, FarAtpPort).
+obcParent(NearAtpPort, NearAtp).
+obcParent(FarAtpPort, FarAtp).
+
+OperationComponent(NearAto).
+OperationComponent(FarAto).
+obcOperation(NearObcu, NearAto).
+obcOperation(FarObcu, FarAto).
+obcPort(NearAtoPort).
+obcPort(FarAtoPort).
+
+obcPorts(NearAto, NearAtoPort).
+obcPorts(FarAto, FarAtoPort).
+obcParent(NearAtoPort, NearAto).
+obcParent(FarAtoPort, FarAto).
+
+ControlScreen(NearHmi).
+ControlScreen(FarHmi).
+obcScreen(NearObcu, NearHmi).
+obcScreen(FarObcu, FarHmi).
+obcPort(NearHmiPort).
+obcPort(FarHmiPort).
+
+obcPorts(NearHmi, NearHmiPort).
+obcPorts(FarHmi, FarHmiPort).
+obcParent(NearHmiPort, NearHmi).
+obcParent(FarHmiPort, FarHmi).
+
+obcConnectedTo(NearAtpPort, NearAtoPort).
+obcConnectedTo(NearAtoPort, NearAtpPort).
+
+obcConnectedTo(NearHmiPort, NearAtoPort).
+obcConnectedTo(NearAtoPort, NearHmiPort).
+
+obcConnectedTo(NearHmiPort, NearAtpPort).
+obcConnectedTo(NearAtpPort, NearHmiPort).
+
+obcConnectedTo(FarAtpPort, FarAtoPort).
+obcConnectedTo(FarAtoPort, FarAtpPort).
+
+obcConnectedTo(FarHmiPort, FarAtoPort).
+obcConnectedTo(FarAtoPort, FarHmiPort).
+
+obcConnectedTo(FarHmiPort, FarAtpPort).
+obcConnectedTo(FarAtpPort, FarHmiPort).
+
+OdometryValue(NearOVa).
+OdometryValue(FarOVa).
+OdometryValue(NearOVb).
+OdometryValue(FarOVb).
+
+odometryCalcA(NearObcu, NearOVa).
+odometryCalcB(NearObcu, NearOVb).
+odometryCalcA(FarObcu, FarOVa).
+odometryCalcB(FarObcu, FarOVb).
+
+measuredData(NearOVa, NearOd).
+measuredData(NearOVb, NearOd).
+measuredData(FarOVa, FarOd).
+measuredData(FarOVb, FarOd).
+
+
+!exists(Train::new).
+!exists(System::new).
+!exists(Platform::new).
+!exists(OnBoardComputer::new).
+!exists(OdometryData::new).
+!exists(OperationComponent::new).
+!exists(TrainManagementComponent::new).
+!exists(PassengerInformationComponent::new).
+!exists(Wayside::new).
+!exists(ProtectionComponent::new).
+!exists(OperationComponent::new).
+!exists(ControlScreen::new).
+!exists(OdometryValue::new).
+!exists(Port::new).
+!exists(obcPort::new).
+!exists(ProtectionStatus::new).
+default !connectedTo(*, *).
+default !obcConnectedTo(*, *).
+
+
+pred isTargetTmc(Port p) <->
+    TrainManagementComponent(tmc),
+    ComponentPorts(tmc, p).
+
+pred isTargetPic(Port p) <->
+    PassengerInformationComponent(pic),
+    ComponentPorts(pic, p).
+
+pred isTargetOscr(Port p) <->
+    OperationScreen(oscr),
+    ComponentPorts(oscr, p).
+
+pred isTargetPort(Port p) <->
+    isTargetTmc(p);
+    isTargetPic(p);
+    isTargetOscr(p).
+
+pred isTargetObcPort(obcPort op) <->
+    ControlScreen(cs),
+    obcPorts(cs, op).
+
+pred hasArrivalEvent(Port p) <->
+    allowedBubbles(p, b),
+    ArrivalEvent(b).
+
+error missingArrivalEventBubble(Train t, Port p) <->
+    trainEvent(t, e),
+    Arrival(e),
+    isTargetPort(p),
+    !hasArrivalEvent(p).
+
+pred hasStandstill(Port p) <->
+    allowedBubbles(p, b),
+    StandstillBubble(b).
+
+error missingStandstillBubble(Train t, Port p) <->
+    trainEvent(t, e),
+    Arrival(e),
+    isTargetPort(p),
+    !hasStandstill(p).
+
+pred hasDepartureEvent(Port p) <->
+    allowedBubbles(p, b),
+    DepartureEvent(b).
+
+error missingDepartureBubble(Train t, Port p) <->
+    trainEvent(t, e),
+    Departure(e),
+    isTargetPort(p),
+    !hasDepartureEvent(p).
+
+error departureBubbleDuringArrival(Port p) <->
+    trainEvent(_, e),
+    Arrival(e),
+    allowedBubbles(p, b),
+    DepartureEvent(b).
+
+error arrivalBubbleDuringDeparture(Port p) <->
+    trainEvent(_, e),
+    Departure(e),
+    allowedBubbles(p, b),
+    ArrivalEvent(b).
+
+error standstillBubbleDuringDeparture(Port p) <->
+    trainEvent(_, e),
+    Departure(e),
+    allowedBubbles(p, b),
+    StandstillBubble(b).
+
+error bubbleInInvalidPort(Port p) <->
+    allowedBubbles(p, _),
+    !isTargetPort(p).
+
+error bubbleInInvalidObcPort(obcPort op) <->
+    obcAllowedBubbles(op, _),
+    !isTargetObcPort(op).
+
+error forbiddenDepartureBubbleExists() <->
+    trainEvent(_, e),
+    Arrival(e),
+    DepartureEvent(_).
+
+error forbiddenArrivalBubbleExists() <->
+    trainEvent(_, e),
+    Departure(e),
+    ArrivalEvent(_).
+
+scope Arrival = 0..1,
+      Departure = 0..1.
+
+scope ZeroSpeed = 0..1,
+      WithinStoppingWindow = 0..1,
+      DoorsOpen = 0..1.
+
+scope MovingSpeed = 0..1,
+      OutsideStoppingWindow = 0..1,
+      DoorsClosed = 0..1.
+
+scope ArrivalEvent = 0..1,
+      StandstillBubble = 0..1,
+      DepartureEvent = 0..1.
+pred hasZeroSpeed(Train t) <-> trainEvent(t, e), Arrival(e), arrSpeed(e, speed), ZeroSpeed(speed).
+
+error noStandstillBubbleWithinZeroSpeed(Train t, Port p) <-> 
+    hasZeroSpeed(t),
+    isTargetPort(p),
+    !hasStandstill(p).

@@ -1,0 +1,12 @@
+{
+  "conditions": [
+    {"id": "C1", "description": "<Text>", "source_text": "<Text_from_requirement_for_traceability>"},
+    {"id": "C2", "description": "<Text>", "source_text": "<Text_from_requirement_for_traceability>"}
+  ],
+  "expectations": [
+    {"id": "E1", "description": "<Text>", "source_text": "<Text_from_requirement_for_traceability>"}
+  ],
+  "rules": [
+    {"logic": "<Text (Example: C1 && C2)>", "result_ids": ["<Text (Example:E1)>"]}
+  ]
+}

@@ -1,0 +1,3 @@
+IF the trainSpeed is ZeroSpeed
+Than the NearObc OR FarObc must send StandstillBubble to the following Component(s):
+TrainManagementComponent via TMCPort OR PassengerInformationComponent via PICPort OR OperationScreen via screenPort.
