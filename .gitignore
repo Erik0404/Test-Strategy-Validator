@@ -1,0 +1,13 @@
+# Node.js / TypeScript (Szerverhez)
+serv/node_modules/
+dist/
+build/
+.env
+
+# IntelliJ IDEA (Klienshez)
+.idea/
+*.iml
+out/
+
+# Egyéb
+.DS_Store
