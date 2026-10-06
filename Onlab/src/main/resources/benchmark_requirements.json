@@ -1,0 +1,27 @@
+[
+  {
+    "id": "REQ_01",
+    "difficulty": "Easy",
+    "text": "IF the trainSpeed is ZeroSpeed THEN the NearObc OR FarObc must send StandstillBubble to the following Component(s): TrainManagementComponent via TMCPort OR PassengerInformationComponent via PICPort OR OperationScreen via screenPort."
+  },
+  {
+    "id": "REQ_02",
+    "difficulty": "Medium",
+    "text": "IF the train event is Arrival AND the doors are DoorsOpen THEN the PassengerInformationComponent must receive an ArrivalEvent via PICPort."
+  },
+  {
+    "id": "REQ_03",
+    "difficulty": "Medium",
+    "text": "IF the train event is Departure AND the speed is MovingSpeed THEN the TrainManagementComponent must receive a DepartureEvent bubble via TMCPort."
+  },
+  {
+    "id": "REQ_04",
+    "difficulty": "Hard",
+    "text": "IF the train is in an Arrival event, THEN both the TrainManagementComponent via TMCPort AND the OperationScreen via screenPort must receive an ArrivalEvent, AND NO DepartureEvent is allowed in these ports."
+  },
+  {
+    "id": "REQ_05",
+    "difficulty": "Extreme",
+    "text": "IF the train event is Departure AND the doors are DoorsClosed THEN all target ports (TrainManagementComponent, PassengerInformationComponent, and OperationScreen) must receive a DepartureEvent, and simultaneously ensure that neither ArrivalEvent nor StandstillBubble are generated."
+  }
+]

@@ -1,6 +1,11 @@
-pred hasZeroSpeed(Train t) <-> trainEvent(t, e), Arrival(e), arrSpeed(e, speed), ZeroSpeed(speed).
+// Your syntax-perfect Datalog code here
 
-error noStandstillBubbleWithinZeroSpeed(Train t, Port p) <-> 
-    hasZeroSpeed(t),
+pred hasZeroSpeed(OdometryData od) <->
+    measuredData(ov, od),
+    ZeroSpeed(_).
+
+error missingStandstillBubbleOnZeroSpeed(Train t, Port p) <->
+    systemOdometryData(sys, od),
+    hasZeroSpeed(od),
     isTargetPort(p),
     !hasStandstill(p).

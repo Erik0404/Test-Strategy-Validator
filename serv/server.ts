@@ -66,6 +66,7 @@ Your response MUST be strictly in JSON format:
     });
 
     const aiData = JSON.parse(completion.choices[0].message.content || '{}');
+    aiData.usage = completion.usage;
     res.json(aiData);
 
   } catch (error: any) {
