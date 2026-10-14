@@ -381,12 +381,23 @@ scope ArrivalEvent = 0..1,
       DepartureEvent = 0..1.
 // Your syntax-perfect Datalog code here
 
-pred hasZeroSpeed(OdometryData od) <->
-    measuredData(ov, od),
-    ZeroSpeed(_).
-
-error missingStandstillBubbleOnZeroSpeed(Train t, Port p) <->
-    systemOdometryData(sys, od),
-    hasZeroSpeed(od),
+pred allTargetPortsHaveDepartureEvent() <->
     isTargetPort(p),
-    !hasStandstill(p).
+    hasDepartureEvent(p).
+
+error missingDepartureEventOnTargetPorts() <->
+    trainEvent(_, e),
+    Departure(e),
+    allTargetPortsHaveDepartureEvent().
+
+error arrivalEventOnDeparture() <->
+    trainEvent(_, e),
+    Departure(e),
+    allowedBubbles(p, b),
+    ArrivalEvent(b).
+
+error standstillBubbleOnDeparture() <->
+    trainEvent(_, e),
+    Departure(e),
+    allowedBubbles(p, b),
+    StandstillBubble(b).

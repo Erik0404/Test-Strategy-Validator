@@ -1,12 +1,13 @@
 import express, { Request, Response } from 'express';
 import OpenAI from 'openai';
+import 'dotenv/config';
 
 const app = express(); //Szerver peldany
 app.use(express.json()); //Automatikus json deserializalo
 
 const openai = new OpenAI({ //Objektum az AI kommunikáciora
   baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: '***API_KEY***', //TODO: Kiszervezni kornyezeti valtozoba
+  apiKey: process.env.OPENROUTER_API_KEY,
 });
 
 app.post('/generate-validated-scenario', async (req: Request, res: Response) => { //POST kerest varunk, 

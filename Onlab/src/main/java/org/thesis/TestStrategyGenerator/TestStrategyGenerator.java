@@ -1,4 +1,4 @@
-package org.thesis;
+package org.thesis.TestStrategyGenerator;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileWriter;
@@ -167,7 +167,20 @@ public class TestStrategyGenerator {
         md.append("\n");
     }
 
-    static class StrategyData { public String requirement_text; public List<Element> conditions; public List<Element> expectations; public List<Rule> rules; }
-    static class Element { public String id, description, source_text; }
-    static class Rule { public String logic; public List<String> result_ids; }
+    public static class StrategyData {
+        public String requirement_text;
+        public List<Element> conditions;
+        public List<Element> expectations;
+        public List<Rule> rules;
+    }
+
+    public static class Element {
+        public String id, description, source_text;
+    }
+
+    public static class Rule {
+        public String logic;
+        public List<String> result_ids;
+    }
+
 }

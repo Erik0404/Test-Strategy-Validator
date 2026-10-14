@@ -3,7 +3,7 @@
   "dependencies": {
     "@tools.refinery/client": "latest",
     "axios": "^1.13.6",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "ms": "^2.1.3",
     "openai": "^6.32.0"

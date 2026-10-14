@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.thesis.ai.AiClient;
 import org.thesis.refinery.RefineryValidator;
+import org.thesis.TestStrategyGenerator.TestStrategyGenerator;
 
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -23,7 +24,7 @@ public class BenchmarkRunner {
 
     private final int maxRetries;
     private final int runsPerReq;
-    private final int maxModelsToExtract = 10; // Maximum 10 állapotot kérünk a Refinerytől
+    private final int maxModelsToExtract = 10;
 
     public BenchmarkRunner(int maxRetries, int runsPerReq) {
         this.maxRetries = maxRetries;
@@ -36,8 +37,7 @@ public class BenchmarkRunner {
         String metaModel = Files.readString(Path.of(metaModelPath));
 
         try (PrintWriter csvWriter = new PrintWriter(new FileWriter(outputCsvPath))) {
-            // Kibővített fejléc a Semantic Coverage-nek!
-            csvWriter.println("Req_ID,Difficulty,Run_Index,Success,Iterations,Generated_Models,Total_Tokens,Error_Log");
+            csvWriter.println("Req_ID,Difficulty,Run_Index,Success,Iterations,Generated_Models,Total_Tokens,Coverage_Pct,Error_Log");
 
             for (Map<String, String> reqData : requirements) {
                 runSingleRequirementBenchmark(reqData, metaModel, csvWriter);
@@ -60,8 +60,10 @@ public class BenchmarkRunner {
             int iter;
             int generatedModelCount = 0;
             StringBuilder errorLog = new StringBuilder();
-            List<Set<String>> extractedModels = null; // Ide gyűjtjük a gráfokat!
+            List<Set<String>> extractedModels = null;
             int totalTokens = 0;
+
+            double finalCoveragePct = 0.0;
 
             for (iter = 1; iter <= maxRetries && !isValid; iter++) {
                 try {
@@ -81,15 +83,18 @@ public class BenchmarkRunner {
                     Files.writeString(Paths.get(targetPath), "\n" + refineryCode, StandardOpenOption.APPEND);
 
                     // Validáció és Modellek kinyerése!
-                    extractedModels = validator.validateAndExtractModels(targetPath, maxModelsToExtract);
+                    TestStrategyGenerator.StrategyData strategyData = mapper.readValue(strategyJson, TestStrategyGenerator.StrategyData.class);
 
+                    extractedModels = validator.validateAndExtractModels(targetPath, maxModelsToExtract);
                     isValid = true;
                     generatedModelCount = extractedModels.size();
-                    System.out.println("    [Iter " + iter + "] SIKERES validáció. Talált gráf állapotok: " + generatedModelCount);
 
-                    // TODO a jövőre: Itt fogjuk behívni a Coverage Calculatort
-                    // SemanticCoverage calc = new SemanticCoverage(strategyJson, extractedModels);
-                    // double coverage = calc.evaluate();
+                    SemanticCoverageCalculator.CoverageResult coverage = SemanticCoverageCalculator.calculateCoverage(strategyData, extractedModels);
+
+                    finalCoveragePct = coverage.getObjectCoveragePct();
+
+                    System.out.printf("    [Iter %d] SIKERES validáció. Gráfok: %d | Object Coverage: %.1f%%%n",
+                            iter, generatedModelCount, finalCoveragePct);
 
                 } catch (Exception e) {
                     String cleanError = e.getMessage().replace("\n", " ").replace(",", ";");
@@ -100,8 +105,9 @@ public class BenchmarkRunner {
             }
 
             String finalErrors = errorLog.toString().isEmpty() ? "None" : errorLog.toString();
-            csvWriter.printf("%s,%s,%d,%b,%d,%d,%d, %s\n",
-                    reqId, difficulty, runIndex, isValid, (iter - 1), generatedModelCount, totalTokens, finalErrors);
+
+            csvWriter.printf(java.util.Locale.US, "%s,%s,%d,%b,%d,%d,%d,%.2f,%s\n",
+                    reqId, difficulty, runIndex, isValid, (iter - 1), generatedModelCount, totalTokens, finalCoveragePct, finalErrors);
             csvWriter.flush();
         }
     }
