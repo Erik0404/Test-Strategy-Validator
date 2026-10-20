@@ -1,0 +1,6 @@
+Req_ID,Suite_Size,Scenarios,Total_Items,Covered_Items,Coverage_Pct,Expected_By_Hand,Contributing_Models,Covered_Item_Ids,Uncovered_Item_Ids
+REQ_01,20,2,7,7,100.00,7,2,I01_C1_ZeroSpeed|I01_C1N_NotZeroSpeed|I01_E_StandstillExists|I01_E_TMC|I01_E_PIC|I01_E_SCR|I01_EN_NoStandstillTMC,
+REQ_02,20,2,7,7,100.00,7,2,I02_C1_Arrival|I02_C1N_NotArrival|I02_C2_DoorsOpen|I02_C2N_DoorsNotOpen|I02_E_ArrivalEventExists|I02_E_PIC_Arrival|I02_EN_PIC_NoArrival,
+REQ_03,20,2,7,7,100.00,7,2,I03_C1_Departure|I03_C1N_NotDeparture|I03_C2_MovingSpeed|I03_C2N_NotMovingSpeed|I03_E_DepartureEventExists|I03_E_TMC_Departure|I03_EN_TMC_NoDeparture,
+REQ_04,20,2,7,7,100.00,7,2,I04_C1_Arrival|I04_C1N_NotArrival|I04_E_ArrivalEventExists|I04_E_TMC_Arrival|I04_E_SCR_Arrival|I04_E_TMC_NoDeparture|I04_E_SCR_NoDeparture,
+REQ_05,20,2,10,10,100.00,10,2,I05_C1_Departure|I05_C1N_NotDeparture|I05_C2_DoorsClosed|I05_C2N_NotDoorsClosed|I05_E_DepartureEventExists|I05_E_TMC_Dep|I05_E_PIC_Dep|I05_E_SCR_Dep|I05_E_NoArrivalEvent|I05_E_NoStandstill,

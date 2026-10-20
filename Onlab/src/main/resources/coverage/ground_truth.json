@@ -1,0 +1,391 @@
+[
+  {
+    "reqId": "REQ_01",
+    "text": "IF the trainSpeed is ZeroSpeed THEN the NearObc OR FarObc must send StandstillBubble to the following Component(s): TrainManagementComponent via TMCPort OR PassengerInformationComponent via PICPort OR OperationScreen via screenPort.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T2_departure.refinery"
+    ],
+    "manualMaxCoverage": 7,
+    "items": [
+      {
+        "id": "I01_C1_ZeroSpeed",
+        "kind": "OBJECT",
+        "type": "ZeroSpeed",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The condition side is exercised: a ZeroSpeed object exists in the instance model."
+      },
+      {
+        "id": "I01_C1N_NotZeroSpeed",
+        "kind": "OBJECT",
+        "type": "ZeroSpeed",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: at least one test has no ZeroSpeed object (the IF does not fire)."
+      },
+      {
+        "id": "I01_E_StandstillExists",
+        "kind": "OBJECT",
+        "type": "StandstillBubble",
+        "negated": false,
+        "traceTo": "E*",
+        "description": "A StandstillBubble object is actually instantiated."
+      },
+      {
+        "id": "I01_E_TMC",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "StandstillBubble",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "StandstillBubble reaches the TrainManagementComponent through TMCPort."
+      },
+      {
+        "id": "I01_E_PIC",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "StandstillBubble",
+        "negated": false,
+        "traceTo": "E2",
+        "description": "StandstillBubble reaches the PassengerInformationComponent through PICPort."
+      },
+      {
+        "id": "I01_E_SCR",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "StandstillBubble",
+        "negated": false,
+        "traceTo": "E3",
+        "description": "StandstillBubble reaches the OperationScreen through screenPort."
+      },
+      {
+        "id": "I01_EN_NoStandstillTMC",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "StandstillBubble",
+        "negated": true,
+        "traceTo": "E1",
+        "description": "Negative branch: at least one test where TMCPort does NOT carry a StandstillBubble."
+      }
+    ]
+  },
+  {
+    "reqId": "REQ_02",
+    "text": "IF the train event is Arrival AND the doors are DoorsOpen THEN the PassengerInformationComponent must receive an ArrivalEvent via PICPort.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T2_departure.refinery"
+    ],
+    "manualMaxCoverage": 7,
+    "items": [
+      {
+        "id": "I02_C1_Arrival",
+        "kind": "OBJECT",
+        "type": "Arrival",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The train event is an Arrival."
+      },
+      {
+        "id": "I02_C1N_NotArrival",
+        "kind": "OBJECT",
+        "type": "Arrival",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: a test without an Arrival event."
+      },
+      {
+        "id": "I02_C2_DoorsOpen",
+        "kind": "OBJECT",
+        "type": "DoorsOpen",
+        "negated": false,
+        "traceTo": "C2",
+        "description": "The doors are open."
+      },
+      {
+        "id": "I02_C2N_DoorsNotOpen",
+        "kind": "OBJECT",
+        "type": "DoorsOpen",
+        "negated": true,
+        "traceTo": "C2",
+        "description": "Negative branch: a test where the doors are not open."
+      },
+      {
+        "id": "I02_E_ArrivalEventExists",
+        "kind": "OBJECT",
+        "type": "ArrivalEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "An ArrivalEvent bubble object is instantiated."
+      },
+      {
+        "id": "I02_E_PIC_Arrival",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "ArrivalEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "ArrivalEvent reaches the PassengerInformationComponent through PICPort."
+      },
+      {
+        "id": "I02_EN_PIC_NoArrival",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "ArrivalEvent",
+        "negated": true,
+        "traceTo": "E1",
+        "description": "Negative branch: a test where PICPort does NOT carry an ArrivalEvent."
+      }
+    ]
+  },
+  {
+    "reqId": "REQ_03",
+    "text": "IF the train event is Departure AND the speed is MovingSpeed THEN the TrainManagementComponent must receive a DepartureEvent bubble via TMCPort.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T2_departure.refinery"
+    ],
+    "manualMaxCoverage": 7,
+    "items": [
+      {
+        "id": "I03_C1_Departure",
+        "kind": "OBJECT",
+        "type": "Departure",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The train event is a Departure."
+      },
+      {
+        "id": "I03_C1N_NotDeparture",
+        "kind": "OBJECT",
+        "type": "Departure",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: a test without a Departure event."
+      },
+      {
+        "id": "I03_C2_MovingSpeed",
+        "kind": "OBJECT",
+        "type": "MovingSpeed",
+        "negated": false,
+        "traceTo": "C2",
+        "description": "The train speed is MovingSpeed."
+      },
+      {
+        "id": "I03_C2N_NotMovingSpeed",
+        "kind": "OBJECT",
+        "type": "MovingSpeed",
+        "negated": true,
+        "traceTo": "C2",
+        "description": "Negative branch: a test where the speed is not MovingSpeed."
+      },
+      {
+        "id": "I03_E_DepartureEventExists",
+        "kind": "OBJECT",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "A DepartureEvent bubble object is instantiated."
+      },
+      {
+        "id": "I03_E_TMC_Departure",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "DepartureEvent reaches the TrainManagementComponent through TMCPort."
+      },
+      {
+        "id": "I03_EN_TMC_NoDeparture",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "DepartureEvent",
+        "negated": true,
+        "traceTo": "E1",
+        "description": "Negative branch: a test where TMCPort does NOT carry a DepartureEvent."
+      }
+    ]
+  },
+  {
+    "reqId": "REQ_04",
+    "text": "IF the train is in an Arrival event, THEN both the TrainManagementComponent via TMCPort AND the OperationScreen via screenPort must receive an ArrivalEvent, AND NO DepartureEvent is allowed in these ports.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T2_departure.refinery"
+    ],
+    "manualMaxCoverage": 7,
+    "items": [
+      {
+        "id": "I04_C1_Arrival",
+        "kind": "OBJECT",
+        "type": "Arrival",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The train event is an Arrival."
+      },
+      {
+        "id": "I04_C1N_NotArrival",
+        "kind": "OBJECT",
+        "type": "Arrival",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: a test without an Arrival event."
+      },
+      {
+        "id": "I04_E_ArrivalEventExists",
+        "kind": "OBJECT",
+        "type": "ArrivalEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "An ArrivalEvent bubble object is instantiated."
+      },
+      {
+        "id": "I04_E_TMC_Arrival",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "ArrivalEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "ArrivalEvent reaches the TrainManagementComponent through TMCPort."
+      },
+      {
+        "id": "I04_E_SCR_Arrival",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "ArrivalEvent",
+        "negated": false,
+        "traceTo": "E2",
+        "description": "ArrivalEvent reaches the OperationScreen through screenPort."
+      },
+      {
+        "id": "I04_E_TMC_NoDeparture",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "DepartureEvent",
+        "negated": true,
+        "traceTo": "E3",
+        "description": "Safety side condition: a test witnessing that TMCPort carries no DepartureEvent."
+      },
+      {
+        "id": "I04_E_SCR_NoDeparture",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "DepartureEvent",
+        "negated": true,
+        "traceTo": "E3",
+        "description": "Safety side condition: a test witnessing that screenPort carries no DepartureEvent."
+      }
+    ]
+  },
+  {
+    "reqId": "REQ_05",
+    "text": "IF the train event is Departure AND the doors are DoorsClosed THEN all target ports (TrainManagementComponent, PassengerInformationComponent, and OperationScreen) must receive a DepartureEvent, and simultaneously ensure that neither ArrivalEvent nor StandstillBubble are generated.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T2_departure.refinery"
+    ],
+    "manualMaxCoverage": 10,
+    "items": [
+      {
+        "id": "I05_C1_Departure",
+        "kind": "OBJECT",
+        "type": "Departure",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The train event is a Departure."
+      },
+      {
+        "id": "I05_C1N_NotDeparture",
+        "kind": "OBJECT",
+        "type": "Departure",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: a test without a Departure event."
+      },
+      {
+        "id": "I05_C2_DoorsClosed",
+        "kind": "OBJECT",
+        "type": "DoorsClosed",
+        "negated": false,
+        "traceTo": "C2",
+        "description": "The doors are closed."
+      },
+      {
+        "id": "I05_C2N_NotDoorsClosed",
+        "kind": "OBJECT",
+        "type": "DoorsClosed",
+        "negated": true,
+        "traceTo": "C2",
+        "description": "Negative branch: a test where the doors are not closed."
+      },
+      {
+        "id": "I05_E_DepartureEventExists",
+        "kind": "OBJECT",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E*",
+        "description": "A DepartureEvent bubble object is instantiated."
+      },
+      {
+        "id": "I05_E_TMC_Dep",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "DepartureEvent reaches the TrainManagementComponent through TMCPort."
+      },
+      {
+        "id": "I05_E_PIC_Dep",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E2",
+        "description": "DepartureEvent reaches the PassengerInformationComponent through PICPort."
+      },
+      {
+        "id": "I05_E_SCR_Dep",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "DepartureEvent",
+        "negated": false,
+        "traceTo": "E3",
+        "description": "DepartureEvent reaches the OperationScreen through screenPort."
+      },
+      {
+        "id": "I05_E_NoArrivalEvent",
+        "kind": "OBJECT",
+        "type": "ArrivalEvent",
+        "negated": true,
+        "traceTo": "E4",
+        "description": "Safety side condition: a test witnessing that no ArrivalEvent object exists."
+      },
+      {
+        "id": "I05_E_NoStandstill",
+        "kind": "OBJECT",
+        "type": "StandstillBubble",
+        "negated": true,
+        "traceTo": "E5",
+        "description": "Safety side condition: a test witnessing that no StandstillBubble object exists."
+      }
+    ]
+  }
+]

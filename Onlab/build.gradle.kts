@@ -1,5 +1,6 @@
 plugins {
     id("java")
+    id("application")
 }
 
 group = "org.example"
@@ -7,6 +8,15 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+application {
+    mainClass = "org.thesis.Main"
+}
+
+// Usage: gradlew run --args="manual" | "benchmark" | "compare" | "all"
+tasks.named<JavaExec>("run") {
+    workingDir = projectDir
 }
 
 java {
