@@ -17,15 +17,13 @@ import java.util.Set;
  * Compares the coverage reached by the LLM-generated test suites with the coverage reached by the
  * hand-written reference suites.
  *
- * <p>Two families of numbers are produced:</p>
- * <ul>
- *   <li><b>Item-level agreement</b> (Jaccard, recall, precision, Cohen's kappa and the phi /
+ * Two families of numbers are produced:
+ *   Item-level agreement (Jaccard, recall, precision, Cohen's kappa and the phi /
  *       Matthews correlation coefficient). Both suites are turned into a binary vector over the
  *       same ground-truth item universe, so phi is literally the correlation between "the engineer
- *       covered this obligation" and "the generator covered this obligation".</li>
- *   <li><b>Score-level correlation</b> (Pearson and Spearman) between the manual and the generated
- *       covered-item counts across all requirement runs.</li>
- * </ul>
+ *       covered this obligation" and "the generator covered this obligation".
+ *   Score-level correlation (Pearson and Spearman) between the manual and the generated
+ *       covered-item counts across all requirement runs.
  */
 public class CoverageComparator {
 

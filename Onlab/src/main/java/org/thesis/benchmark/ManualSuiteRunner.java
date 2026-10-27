@@ -15,14 +15,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Executes the <b>hand-written</b> (golden) test suites and measures how much of the manually
+ * Executes the hand-written (golden) test suites and measures how much of the manually
  * derived coverage obligations they reach. This establishes the reference point the
  * LLM-generated suites are compared against.
  *
- * <p>The manual scenarios go through exactly the same Refinery pipeline as the generated ones,
+ * The manual scenarios go through exactly the same Refinery pipeline as the generated ones,
  * so the reference suite is itself formally validated against the metamodel. The number this
- * runner reports for a requirement is the <em>maximum achievable object coverage</em> we were
- * able to realise by hand.</p>
+ * runner reports for a requirement is the maximum achievable object coverage we were
+ * able to realise by hand.
  */
 public class ManualSuiteRunner {
 

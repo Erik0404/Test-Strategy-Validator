@@ -5,20 +5,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 /**
  * One atomic, model-grounded coverage obligation derived from a requirement.
  *
- * <p>A coverage item is intentionally NOT matched against the free text produced by the LLM.
+ * A coverage item is intentionally NOT matched against the free text produced by the LLM.
  * It is a pattern over the concrete instance model (the Datalog facts serialized by Refinery),
- * so the metric is grounded in the formal model instead of in natural language.</p>
+ * so the metric is grounded in the formal model instead of in natural language.
  *
- * <ul>
- *   <li>{@code OBJECT}: holds in a model iff a node of class {@link #type} exists.</li>
- *   <li>{@code LINK}: holds in a model iff there is a fact {@code relation(source, y)}
+ *   {@code OBJECT}: holds in a model iff a node of class {@link #type} exists.
+ *   {@code LINK}: holds in a model iff there is a fact {@code relation(source, y)}
  *       where {@code y} is a node of class {@link #type} (or, if {@link #target} is given,
- *       {@code y} is exactly that node).</li>
- * </ul>
+ *       {@code y} is exactly that node).
  *
- * <p>If {@link #negated} is {@code true}, the item is covered by a test suite as soon as at least
- * one model of the suite <em>violates</em> the pattern. This is what makes the "else" branch of a
- * requirement an explicit, measurable coverage obligation.</p>
+ * If {@link #negated} is {@code true}, the item is covered by a test suite as soon as at least
+ * one model of the suite violates the pattern. This is what makes the "else" branch of a
+ * requirement an explicit, measurable coverage obligation.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CoverageItem {

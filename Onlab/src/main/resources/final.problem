@@ -379,25 +379,11 @@ scope MovingSpeed = 0..1,
 scope ArrivalEvent = 0..1,
       StandstillBubble = 0..1,
       DepartureEvent = 0..1.
-// Your syntax-perfect Datalog code here
+pred gen_hasDoorsClosed(Event e) <-> Departure(e), doorsClosed(e).
 
-pred allTargetPortsHaveDepartureEvent() <->
+error gen_missingDepartureEventOrUnexpectedBubble(Train t, Port p) <-> 
+    trainEvent(t, e),
+    Departure(e),
+    gen_hasDoorsClosed(e),
     isTargetPort(p),
-    hasDepartureEvent(p).
-
-error missingDepartureEventOnTargetPorts() <->
-    trainEvent(_, e),
-    Departure(e),
-    allTargetPortsHaveDepartureEvent().
-
-error arrivalEventOnDeparture() <->
-    trainEvent(_, e),
-    Departure(e),
-    allowedBubbles(p, b),
-    ArrivalEvent(b).
-
-error standstillBubbleOnDeparture() <->
-    trainEvent(_, e),
-    Departure(e),
-    allowedBubbles(p, b),
-    StandstillBubble(b).
+    ( !hasDepartureEvent(p) ; hasArrivalEvent(p) ; hasStandstill(p) ).

@@ -12,17 +12,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Object coverage of a <em>test suite</em> (a set of instance models produced by Refinery)
+ * Object coverage of a test suite (a set of instance models produced by Refinery)
  * with respect to the manually derived coverage obligations of a requirement.
  *
- * <p>Key difference from the earlier, text-based metric:</p>
- * <ul>
- *   <li>the denominator is fixed (the ground-truth item set), it does not grow with the number
- *       of models;</li>
- *   <li>coverage is the <b>union</b> over the suite: an item is covered if <em>at least one</em>
- *       model witnesses it;</li>
- *   <li>matching happens on Datalog facts, not on natural-language fragments.</li>
- * </ul>
+ * Key difference from the earlier, text-based metric:
+ *   the denominator is fixed (the ground-truth item set), it does not grow with the number
+ *       of models;
+ *    coverage is the union over the suite: an item is covered if at least one
+ *       model witnesses it;
+ *   matching happens on Datalog facts, not on natural-language fragments.
  */
 public final class ObjectCoverageCalculator {
 
