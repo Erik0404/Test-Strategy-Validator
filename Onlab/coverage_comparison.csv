@@ -1,0 +1,16 @@
+Req_ID,Run_Index,Total_Items,Manual_Covered,Generated_Covered,Manual_Pct,Generated_Pct,Intersection,Union,Jaccard,Recall,Precision,F1,Cohen_Kappa,Phi,Base_Covered,Base_Recall,Missed_By_LLM
+REQ_01,1,7,7,5,100.00,71.43,5,7,0.7143,0.7143,1.0000,0.8333,NaN,NaN,n/a,n/a,I01_C1N_NotZeroSpeed|I01_EN_NoStandstillTMC
+REQ_01,2,7,7,5,100.00,71.43,5,7,0.7143,0.7143,1.0000,0.8333,NaN,NaN,n/a,n/a,I01_C1N_NotZeroSpeed|I01_EN_NoStandstillTMC
+REQ_01,3,7,7,5,100.00,71.43,5,7,0.7143,0.7143,1.0000,0.8333,NaN,NaN,n/a,n/a,I01_C1N_NotZeroSpeed|I01_EN_NoStandstillTMC
+REQ_02,1,7,7,4,100.00,57.14,4,7,0.5714,0.5714,1.0000,0.7273,NaN,NaN,n/a,n/a,I02_C1N_NotArrival|I02_C2N_DoorsNotOpen|I02_EN_PIC_NoArrival
+REQ_02,2,7,7,4,100.00,57.14,4,7,0.5714,0.5714,1.0000,0.7273,NaN,NaN,n/a,n/a,I02_C1N_NotArrival|I02_C2N_DoorsNotOpen|I02_EN_PIC_NoArrival
+REQ_02,3,7,7,4,100.00,57.14,4,7,0.5714,0.5714,1.0000,0.7273,NaN,NaN,n/a,n/a,I02_C1N_NotArrival|I02_C2N_DoorsNotOpen|I02_EN_PIC_NoArrival
+REQ_03,1,7,7,3,100.00,42.86,3,7,0.4286,0.4286,1.0000,0.6000,NaN,NaN,n/a,n/a,I03_C1_Departure|I03_C2_MovingSpeed|I03_E_DepartureEventExists|I03_E_TMC_Departure
+REQ_03,2,7,7,3,100.00,42.86,3,7,0.4286,0.4286,1.0000,0.6000,NaN,NaN,n/a,n/a,I03_C1_Departure|I03_C2_MovingSpeed|I03_E_DepartureEventExists|I03_E_TMC_Departure
+REQ_03,3,7,7,3,100.00,42.86,3,7,0.4286,0.4286,1.0000,0.6000,NaN,NaN,n/a,n/a,I03_C1_Departure|I03_C2_MovingSpeed|I03_E_DepartureEventExists|I03_E_TMC_Departure
+REQ_04,1,7,7,6,100.00,85.71,6,7,0.8571,0.8571,1.0000,0.9231,NaN,NaN,n/a,n/a,I04_C1N_NotArrival
+REQ_04,2,7,7,6,100.00,85.71,6,7,0.8571,0.8571,1.0000,0.9231,NaN,NaN,n/a,n/a,I04_C1N_NotArrival
+REQ_04,3,7,7,0,100.00,0.00,0,7,0.0000,0.0000,NaN,NaN,NaN,NaN,n/a,n/a,I04_C1_Arrival|I04_C1N_NotArrival|I04_E_ArrivalEventExists|I04_E_TMC_Arrival|I04_E_SCR_Arrival|I04_E_TMC_NoDeparture|I04_E_SCR_NoDeparture
+REQ_05,1,10,10,0,100.00,0.00,0,10,0.0000,0.0000,NaN,NaN,NaN,NaN,n/a,n/a,I05_C1_Departure|I05_C1N_NotDeparture|I05_C2_DoorsClosed|I05_C2N_NotDoorsClosed|I05_E_DepartureEventExists|I05_E_TMC_Dep|I05_E_PIC_Dep|I05_E_SCR_Dep|I05_E_NoArrivalEvent|I05_E_NoStandstill
+REQ_05,2,10,10,0,100.00,0.00,0,10,0.0000,0.0000,NaN,NaN,NaN,NaN,n/a,n/a,I05_C1_Departure|I05_C1N_NotDeparture|I05_C2_DoorsClosed|I05_C2N_NotDoorsClosed|I05_E_DepartureEventExists|I05_E_TMC_Dep|I05_E_PIC_Dep|I05_E_SCR_Dep|I05_E_NoArrivalEvent|I05_E_NoStandstill
+REQ_05,3,10,10,0,100.00,0.00,0,10,0.0000,0.0000,NaN,NaN,NaN,NaN,n/a,n/a,I05_C1_Departure|I05_C1N_NotDeparture|I05_C2_DoorsClosed|I05_C2N_NotDoorsClosed|I05_E_DepartureEventExists|I05_E_TMC_Dep|I05_E_PIC_Dep|I05_E_SCR_Dep|I05_E_NoArrivalEvent|I05_E_NoStandstill

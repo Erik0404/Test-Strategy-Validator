@@ -23,5 +23,10 @@
     "id": "REQ_05",
     "difficulty": "Extreme",
     "text": "IF the train event is Departure AND the doors are DoorsClosed THEN all target ports (TrainManagementComponent, PassengerInformationComponent, and OperationScreen) must receive a DepartureEvent, and simultaneously ensure that neither ArrivalEvent nor StandstillBubble are generated."
+  },
+  {
+    "id": "REQ_06",
+    "difficulty": "Complex",
+    "text": "IF the train event is EmergencyStop, caused either by ObstacleDetected OR by PassengerAlarm, THEN the NearObc AND FarObc must send an EmergencyBubble to the TrainManagementComponent via TMCPort, the PassengerInformationComponent via PICPort, the OperationScreen via screenPort AND to both Wayside units via WCU1Port AND WCU2Port. IF the EmergencyStop happens WithinStoppingWindow THEN the doors must be DoorsOpen AND an EvacuationBubble must be sent to the PassengerInformationComponent via PICPort AND to the OperationScreen via screenPort; IF it happens OutsideStoppingWindow THEN the doors must remain DoorsClosed AND NO EvacuationBubble is allowed. During an EmergencyStop NO ArrivalEvent, DepartureEvent OR StandstillBubble is allowed."
   }
 ]

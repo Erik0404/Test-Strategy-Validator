@@ -14,22 +14,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Executes the hand-written (golden) test suites and measures how much of the manually
- * derived coverage obligations they reach. This establishes the reference point the
- * LLM-generated suites are compared against.
- *
- * The manual scenarios go through exactly the same Refinery pipeline as the generated ones,
- * so the reference suite is itself formally validated against the metamodel. The number this
- * runner reports for a requirement is the maximum achievable object coverage we were
- * able to realise by hand.
- */
 public class ManualSuiteRunner {
 
     private final RefineryValidator validator = new RefineryValidator();
     private final int maxSolutionsPerScenario;
 
-    /** Cache: scenario snippet path -> solved instance models (snippets are shared across requirements). */
     private final Map<String, List<Set<String>>> scenarioCache = new HashMap<>();
 
     public ManualSuiteRunner(int maxSolutionsPerScenario) {

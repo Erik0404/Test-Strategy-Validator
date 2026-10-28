@@ -10,20 +10,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * The manually derived reference ("ground truth") for a single requirement:
- * the complete set of coverage obligations plus the hand-written test suite
- * that is expected to maximise them.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RequirementGroundTruth {
 
     public String reqId;
     public String text;
     public List<CoverageItem> items;
-    /** Paths of the hand-written Refinery scenario snippets forming the manual test suite. */
     public List<String> manualSuite;
-    /** Coverage count computed by hand on paper; used as a sanity check against the tool. */
     public int manualMaxCoverage;
 
     public int totalItems() {

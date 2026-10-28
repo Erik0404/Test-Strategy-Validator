@@ -65,6 +65,8 @@ class ProtectionStatus extends CyclicBubble.
 class ArrivalEvent extends EventBubble.
 class DepartureEvent extends EventBubble.
 class StandstillBubble extends EventBubble.
+class EmergencyBubble extends EventBubble.
+class EvacuationBubble extends EventBubble.
 
 class Platform.
 
@@ -92,6 +94,16 @@ class Departure extends Event{
     contains MovingSpeed[1] depSpeed
     contains OutsideStoppingWindow[1] depWindow
     contains DoorsClosed[1] depDoors
+}
+
+abstract class EmergencyCause.
+class ObstacleDetected extends EmergencyCause.
+class PassengerAlarm extends EmergencyCause.
+
+class EmergencyStop extends Event {
+    contains EmergencyCause[1] emCause
+    contains StoppingWindowStatus[1] emWindow
+    contains DoorState[1] emDoors
 }
 
 
@@ -348,8 +360,9 @@ error standstillBubbleDuringDeparture(Port p) <->
     StandstillBubble(b).
 
 error bubbleInInvalidPort(Port p) <->
-    allowedBubbles(p, _),
-    !isTargetPort(p).
+    allowedBubbles(p, b),
+    !isTargetPort(p),
+    !EmergencyBubble(b).
 
 error bubbleInInvalidObcPort(obcPort op) <->
     obcAllowedBubbles(op, _),
@@ -365,8 +378,87 @@ error forbiddenArrivalBubbleExists() <->
     Departure(e),
     ArrivalEvent(_).
 
+% --- Emergency stop -------------------------------------------------------
+
+pred isWaysidePort(Port p) <->
+    Wayside(w),
+    ComponentPorts(w, p).
+
+pred isEmergencyTargetPort(Port p) <->
+    isTargetPort(p);
+    isWaysidePort(p).
+
+pred isEvacuationTargetPort(Port p) <->
+    isTargetPic(p);
+    isTargetOscr(p).
+
+pred hasEmergencyStop() <->
+    trainEvent(_, e),
+    EmergencyStop(e).
+
+pred emergencyAtPlatform(EmergencyStop e) <->
+    emWindow(e, w),
+    WithinStoppingWindow(w).
+
+pred emergencyBetweenPlatforms(EmergencyStop e) <->
+    emWindow(e, w),
+    OutsideStoppingWindow(w).
+
+pred evacuationActive() <->
+    trainEvent(_, e),
+    emergencyAtPlatform(e).
+
+pred hasEmergencyBubble(Port p) <->
+    allowedBubbles(p, b),
+    EmergencyBubble(b).
+
+pred hasEvacuationBubble(Port p) <->
+    allowedBubbles(p, b),
+    EvacuationBubble(b).
+
+error missingEmergencyBubble(Train t, Port p) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    isEmergencyTargetPort(p),
+    !hasEmergencyBubble(p).
+
+error emergencyBubbleInInvalidPort(Port p) <->
+    allowedBubbles(p, b),
+    EmergencyBubble(b),
+    !isEmergencyTargetPort(p).
+
+error emergencyBubbleWithoutEmergency() <->
+    EmergencyBubble(_),
+    !hasEmergencyStop().
+
+error doorsNotReleasedForEvacuation(EmergencyStop e) <->
+    emergencyAtPlatform(e),
+    emDoors(e, d),
+    DoorsClosed(d).
+
+error doorsOpenOutsideStoppingWindow(EmergencyStop e) <->
+    emergencyBetweenPlatforms(e),
+    emDoors(e, d),
+    DoorsOpen(d).
+
+error missingEvacuationBubble(Train t, Port p) <->
+    trainEvent(t, e),
+    emergencyAtPlatform(e),
+    isEvacuationTargetPort(p),
+    !hasEvacuationBubble(p).
+
+error evacuationWithoutPlatformEmergency() <->
+    EvacuationBubble(_),
+    !evacuationActive().
+
+error regularBubbleDuringEmergency() <->
+    hasEmergencyStop(), ArrivalEvent(_);
+    hasEmergencyStop(), DepartureEvent(_);
+    hasEmergencyStop(), StandstillBubble(_).
+
 scope Arrival = 0..1,
-      Departure = 0..1.
+      Departure = 0..1,
+      EmergencyStop = 0..1.
 
 scope ZeroSpeed = 0..1,
       WithinStoppingWindow = 0..1,
@@ -379,11 +471,17 @@ scope MovingSpeed = 0..1,
 scope ArrivalEvent = 0..1,
       StandstillBubble = 0..1,
       DepartureEvent = 0..1.
-pred gen_hasDoorsClosed(Event e) <-> Departure(e), doorsClosed(e).
 
-error gen_missingDepartureEventOrUnexpectedBubble(Train t, Port p) <-> 
-    trainEvent(t, e),
-    Departure(e),
-    gen_hasDoorsClosed(e),
-    isTargetPort(p),
-    ( !hasDepartureEvent(p) ; hasArrivalEvent(p) ; hasStandstill(p) ).
+scope ObstacleDetected = 0..1,
+      PassengerAlarm = 0..1.
+
+scope EmergencyBubble = 0..1,
+      EvacuationBubble = 0..1.
+pred gen_hasEmergencyOnTmc(Port p) <->
+    allowedBubbles(p, b),
+    EmergencyBubble(b).
+
+error gen_missingEmergencyOnTmc(Port p) <->
+    hasEmergencyStop(),
+    isTargetTmc(p),
+    !gen_hasEmergencyOnTmc(p).

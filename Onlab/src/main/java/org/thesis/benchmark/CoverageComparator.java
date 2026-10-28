@@ -13,25 +13,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Compares the coverage reached by the LLM-generated test suites with the coverage reached by the
- * hand-written reference suites.
- *
- * Two families of numbers are produced:
- *   Item-level agreement (Jaccard, recall, precision, Cohen's kappa and the phi /
- *       Matthews correlation coefficient). Both suites are turned into a binary vector over the
- *       same ground-truth item universe, so phi is literally the correlation between "the engineer
- *       covered this obligation" and "the generator covered this obligation".
- *   Score-level correlation (Pearson and Spearman) between the manual and the generated
- *       covered-item counts across all requirement runs.
- */
 public class CoverageComparator {
 
     public static final class Agreement {
-        public int truePositive;   // covered by both
-        public int falsePositive;  // covered only by the generated suite
-        public int falseNegative;  // covered only by the manual suite
-        public int trueNegative;   // covered by neither
+        public int truePositive;
+        public int falsePositive;
+        public int falseNegative;
+        public int trueNegative;
 
         public int union() {
             return truePositive + falsePositive + falseNegative;
@@ -58,10 +46,9 @@ public class CoverageComparator {
             return 2 * p * r / (p + r);
         }
 
-        /** Cohen's kappa: agreement corrected for the agreement expected by chance. */
         public double cohenKappa() {
-            double n = truePositive + falsePositive + falseNegative + trueNegative;
-            if (n == 0) return Double.NaN;
+            double n = (double) truePositive + falsePositive + falseNegative + trueNegative;
+            if (n == 0 || truePositive + falseNegative == 0 || falsePositive + trueNegative == 0) return Double.NaN;
             double observed = (truePositive + trueNegative) / n;
             double manualYes = (truePositive + falseNegative) / n;
             double genYes = (truePositive + falsePositive) / n;
@@ -70,7 +57,6 @@ public class CoverageComparator {
             return (observed - expected) / (1 - expected);
         }
 
-        /** Phi / Matthews correlation coefficient over the two binary coverage vectors. */
         public double phi() {
             double tp = truePositive, fp = falsePositive, fn = falseNegative, tn = trueNegative;
             double denominator = Math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn));
@@ -108,16 +94,22 @@ public class CoverageComparator {
         Map<String, RequirementGroundTruth> groundTruth = RequirementGroundTruth.load(groundTruthPath);
         Map<String, Set<String>> manualCovered = readCoveredSets(manualCsvPath, "Req_ID", "Covered_Item_Ids");
         List<String[]> generatedRows = readRows(benchmarkCsvPath);
+        Map<String, Integer> header = headerIndex(benchmarkCsvPath);
+        // Ablacio: a megszoritasok onmagukban (tervezett szcenariok nelkul) - ha a CSV tartalmazza
+        boolean hasBase = header.containsKey("Base_Covered_Item_Ids");
 
         Agreement pooled = new Agreement();
+        Agreement pooledBase = new Agreement();
         List<Double> manualScores = new ArrayList<>();
         List<Double> generatedScores = new ArrayList<>();
+        List<Double> baseManualScores = new ArrayList<>();
+        List<Double> baseScores = new ArrayList<>();
 
         try (PrintWriter csv = new PrintWriter(new FileWriter(outputCsvPath))) {
             csv.println("Req_ID,Run_Index,Total_Items,Manual_Covered,Generated_Covered,Manual_Pct,"
-                    + "Generated_Pct,Intersection,Union,Jaccard,Recall,Precision,F1,Cohen_Kappa,Phi,Missed_By_LLM");
+                    + "Generated_Pct,Intersection,Union,Jaccard,Recall,Precision,F1,Cohen_Kappa,Phi,"
+                    + "Base_Covered,Base_Recall,Missed_By_LLM");
 
-            Map<String, Integer> header = headerIndex(benchmarkCsvPath);
             for (String[] row : generatedRows) {
                 String reqId = row[header.get("Req_ID")];
                 RequirementGroundTruth gt = groundTruth.get(reqId);
@@ -126,9 +118,19 @@ public class CoverageComparator {
                 List<String> universe = gt.items.stream().map(i -> i.id).toList();
                 Set<String> manual = manualCovered.getOrDefault(reqId, Set.of());
                 Set<String> generated = splitIds(row[header.get("Covered_Item_Ids")]);
+                String baseCell = hasBase ? row[header.get("Base_Covered_Item_Ids")].trim() : "n/a";
+                // n/a: a szcenario nelkuli (ablacios) generalas abban a futasban nem keszult el
+                Set<String> base = baseCell.equals("n/a") ? null : splitIds(baseCell);
 
                 Agreement agreement = compare(universe, manual, generated);
                 pooled = pooled.plus(agreement);
+                Agreement baseAgreement = null;
+                if (base != null) {
+                    baseAgreement = compare(universe, manual, base);
+                    pooledBase = pooledBase.plus(baseAgreement);
+                    baseManualScores.add((double) manual.size());
+                    baseScores.add((double) base.size());
+                }
 
                 double manualPct = 100.0 * manual.size() / universe.size();
                 double generatedPct = 100.0 * generated.size() / universe.size();
@@ -139,7 +141,7 @@ public class CoverageComparator {
                 missed.removeAll(generated);
 
                 csv.printf(Locale.US,
-                        "%s,%s,%d,%d,%d,%.2f,%.2f,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%s%n",
+                        "%s,%s,%d,%d,%d,%.2f,%.2f,%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%s,%s,%s%n",
                         reqId,
                         row[header.get("Run_Index")],
                         universe.size(),
@@ -155,25 +157,45 @@ public class CoverageComparator {
                         agreement.f1(),
                         agreement.cohenKappa(),
                         agreement.phi(),
+                        base == null ? "n/a" : String.valueOf(base.size()),
+                        baseAgreement == null ? "n/a" : String.format(Locale.US, "%.4f", baseAgreement.recall()),
                         missed.isEmpty() ? "-" : String.join("|", missed));
             }
         }
 
         double[] x = manualScores.stream().mapToDouble(Double::doubleValue).toArray();
         double[] y = generatedScores.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] xBase = baseManualScores.stream().mapToDouble(Double::doubleValue).toArray();
+        double[] yBase = baseScores.stream().mapToDouble(Double::doubleValue).toArray();
+        hasBase = hasBase && yBase.length > 0;
 
         System.out.println("\n================ Manual vs. generated coverage ================");
-        System.out.printf(Locale.US, "Compared runs                 : %d%n", x.length);
-        System.out.printf(Locale.US, "Pooled item-level agreement   : TP=%d FP=%d FN=%d TN=%d%n",
-                pooled.truePositive, pooled.falsePositive, pooled.falseNegative, pooled.trueNegative);
-        System.out.printf(Locale.US, "Pooled Jaccard                : %.4f%n", pooled.jaccard());
-        System.out.printf(Locale.US, "Pooled recall (vs. manual)    : %.4f%n", pooled.recall());
-        System.out.printf(Locale.US, "Pooled precision              : %.4f%n", pooled.precision());
-        System.out.printf(Locale.US, "Pooled Cohen's kappa          : %.4f%n", pooled.cohenKappa());
-        System.out.printf(Locale.US, "Pooled phi (MCC) correlation  : %.4f%n", pooled.phi());
-        System.out.printf(Locale.US, "Pearson r (covered counts)    : %.4f%n", pearson(x, y));
-        System.out.printf(Locale.US, "Spearman rho (covered counts) : %.4f%n", spearman(x, y));
+        System.out.printf(Locale.US, "Compared runs: %d%s%n%n", x.length,
+                hasBase ? " (solver-only ablation available for " + yBase.length + ")" : "");
+        System.out.printf("%-32s %16s %16s%n", "", "generated suite", hasBase ? "solver only" : "");
+        printRow("Pooled TP / FN", pooled.truePositive + " / " + pooled.falseNegative,
+                hasBase ? pooledBase.truePositive + " / " + pooledBase.falseNegative : "");
+        printRow("Pooled recall (vs. manual)", fmt(pooled.recall()), hasBase ? fmt(pooledBase.recall()) : "");
+        printRow("Pooled Jaccard", fmt(pooled.jaccard()), hasBase ? fmt(pooledBase.jaccard()) : "");
+        printRow("Pooled precision", fmt(pooled.precision()), hasBase ? fmt(pooledBase.precision()) : "");
+        printRow("Pooled Cohen's kappa", fmt(pooled.cohenKappa()), hasBase ? fmt(pooledBase.cohenKappa()) : "");
+        printRow("Pooled phi (MCC)", fmt(pooled.phi()), hasBase ? fmt(pooledBase.phi()) : "");
+        printRow("Pearson r (covered counts)", fmt(pearson(x, y)), hasBase ? fmt(pearson(xBase, yBase)) : "");
+        printRow("Spearman rho (covered counts)", fmt(spearman(x, y)), hasBase ? fmt(spearman(xBase, yBase)) : "");
+        if (pooled.falsePositive + pooled.trueNegative == 0) {
+            System.out.println("\nn/a: the manual suite covers every item, so its coverage vector is constant and "
+                    + "phi / kappa are undefined.\n     Use recall and the Pearson / Spearman correlation across "
+                    + "requirements instead.");
+        }
         System.out.println("Detailed per-run table written to " + outputCsvPath);
+    }
+
+    private static void printRow(String label, String llm, String base) {
+        System.out.printf("%-32s %16s %16s%n", label, llm, base);
+    }
+
+    private static String fmt(double value) {
+        return Double.isNaN(value) ? "n/a" : String.format(Locale.US, "%.4f", value);
     }
 
     public static double pearson(double[] x, double[] y) {

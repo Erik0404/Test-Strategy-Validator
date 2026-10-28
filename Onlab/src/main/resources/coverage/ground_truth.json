@@ -29,8 +29,9 @@
         "kind": "OBJECT",
         "type": "StandstillBubble",
         "negated": false,
+        "guardType": "ZeroSpeed",
         "traceTo": "E*",
-        "description": "A StandstillBubble object is actually instantiated."
+        "description": "A StandstillBubble object is instantiated while the train is at ZeroSpeed."
       },
       {
         "id": "I01_E_TMC",
@@ -276,8 +277,9 @@
         "source": "TMCPort",
         "type": "DepartureEvent",
         "negated": true,
+        "guardType": "Arrival",
         "traceTo": "E3",
-        "description": "Safety side condition: a test witnessing that TMCPort carries no DepartureEvent."
+        "description": "Safety side condition: an Arrival test witnessing that TMCPort carries no DepartureEvent."
       },
       {
         "id": "I04_E_SCR_NoDeparture",
@@ -286,8 +288,9 @@
         "source": "screenPort",
         "type": "DepartureEvent",
         "negated": true,
+        "guardType": "Arrival",
         "traceTo": "E3",
-        "description": "Safety side condition: a test witnessing that screenPort carries no DepartureEvent."
+        "description": "Safety side condition: an Arrival test witnessing that screenPort carries no DepartureEvent."
       }
     ]
   },
@@ -375,16 +378,240 @@
         "kind": "OBJECT",
         "type": "ArrivalEvent",
         "negated": true,
+        "guardType": "Departure",
         "traceTo": "E4",
-        "description": "Safety side condition: a test witnessing that no ArrivalEvent object exists."
+        "description": "Safety side condition: a Departure test witnessing that no ArrivalEvent object exists."
       },
       {
         "id": "I05_E_NoStandstill",
         "kind": "OBJECT",
         "type": "StandstillBubble",
         "negated": true,
+        "guardType": "Departure",
         "traceTo": "E5",
-        "description": "Safety side condition: a test witnessing that no StandstillBubble object exists."
+        "description": "Safety side condition: a Departure test witnessing that no StandstillBubble object exists."
+      }
+    ]
+  },
+  {
+    "reqId": "REQ_06",
+    "text": "IF the train event is EmergencyStop, caused either by ObstacleDetected OR by PassengerAlarm, THEN the NearObc AND FarObc must send an EmergencyBubble to the TrainManagementComponent via TMCPort, the PassengerInformationComponent via PICPort, the OperationScreen via screenPort AND to both Wayside units via WCU1Port AND WCU2Port. IF the EmergencyStop happens WithinStoppingWindow THEN the doors must be DoorsOpen AND an EvacuationBubble must be sent to the PassengerInformationComponent via PICPort AND to the OperationScreen via screenPort; IF it happens OutsideStoppingWindow THEN the doors must remain DoorsClosed AND NO EvacuationBubble is allowed. During an EmergencyStop NO ArrivalEvent, DepartureEvent OR StandstillBubble is allowed.",
+    "manualSuite": [
+      "src/main/resources/manual/T1_arrival.refinery",
+      "src/main/resources/manual/T3_emergency_at_platform.refinery",
+      "src/main/resources/manual/T4_emergency_between_platforms.refinery"
+    ],
+    "manualMaxCoverage": 22,
+    "items": [
+      {
+        "id": "I06_C1_Emergency",
+        "kind": "OBJECT",
+        "type": "EmergencyStop",
+        "negated": false,
+        "traceTo": "C1",
+        "description": "The train event is an EmergencyStop."
+      },
+      {
+        "id": "I06_C1N_NoEmergency",
+        "kind": "OBJECT",
+        "type": "EmergencyStop",
+        "negated": true,
+        "traceTo": "C1",
+        "description": "Negative branch: a test without an EmergencyStop event."
+      },
+      {
+        "id": "I06_C2_CauseObstacle",
+        "kind": "LINK",
+        "relation": "emCause",
+        "sourceType": "EmergencyStop",
+        "type": "ObstacleDetected",
+        "negated": false,
+        "traceTo": "C2",
+        "description": "Equivalence class: an EmergencyStop caused by ObstacleDetected."
+      },
+      {
+        "id": "I06_C3_CausePassengerAlarm",
+        "kind": "LINK",
+        "relation": "emCause",
+        "sourceType": "EmergencyStop",
+        "type": "PassengerAlarm",
+        "negated": false,
+        "traceTo": "C3",
+        "description": "Equivalence class: an EmergencyStop caused by PassengerAlarm."
+      },
+      {
+        "id": "I06_C4_WithinWindow",
+        "kind": "LINK",
+        "relation": "emWindow",
+        "sourceType": "EmergencyStop",
+        "type": "WithinStoppingWindow",
+        "negated": false,
+        "traceTo": "C4",
+        "description": "The EmergencyStop happens WithinStoppingWindow (at a platform)."
+      },
+      {
+        "id": "I06_C4N_OutsideWindow",
+        "kind": "LINK",
+        "relation": "emWindow",
+        "sourceType": "EmergencyStop",
+        "type": "OutsideStoppingWindow",
+        "negated": false,
+        "traceTo": "C4",
+        "description": "Negative branch of C4: the EmergencyStop happens OutsideStoppingWindow (between platforms)."
+      },
+      {
+        "id": "I06_E_EmergencyBubbleExists",
+        "kind": "OBJECT",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "guardType": "EmergencyStop",
+        "traceTo": "E1-E5",
+        "description": "An EmergencyBubble object is instantiated during an EmergencyStop."
+      },
+      {
+        "id": "I06_E_TMC_Emergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "traceTo": "E1",
+        "description": "EmergencyBubble reaches the TrainManagementComponent through TMCPort."
+      },
+      {
+        "id": "I06_E_PIC_Emergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "traceTo": "E2",
+        "description": "EmergencyBubble reaches the PassengerInformationComponent through PICPort."
+      },
+      {
+        "id": "I06_E_SCR_Emergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "traceTo": "E3",
+        "description": "EmergencyBubble reaches the OperationScreen through screenPort."
+      },
+      {
+        "id": "I06_E_WCU1_Emergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "WCU1Port",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "traceTo": "E4",
+        "description": "EmergencyBubble reaches the first Wayside unit through WCU1Port."
+      },
+      {
+        "id": "I06_E_WCU2_Emergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "WCU2Port",
+        "type": "EmergencyBubble",
+        "negated": false,
+        "traceTo": "E5",
+        "description": "EmergencyBubble reaches the second Wayside unit through WCU2Port."
+      },
+      {
+        "id": "I06_EN_TMC_NoEmergency",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "TMCPort",
+        "type": "EmergencyBubble",
+        "negated": true,
+        "traceTo": "E1",
+        "description": "Negative branch: a test where TMCPort does NOT carry an EmergencyBubble."
+      },
+      {
+        "id": "I06_E_DoorsOpenAtPlatform",
+        "kind": "LINK",
+        "relation": "emDoors",
+        "sourceType": "EmergencyStop",
+        "type": "DoorsOpen",
+        "negated": false,
+        "traceTo": "E6",
+        "description": "The doors of an EmergencyStop are DoorsOpen (evacuation at the platform)."
+      },
+      {
+        "id": "I06_E_DoorsClosedBetween",
+        "kind": "LINK",
+        "relation": "emDoors",
+        "sourceType": "EmergencyStop",
+        "type": "DoorsClosed",
+        "negated": false,
+        "traceTo": "E9",
+        "description": "The doors of an EmergencyStop remain DoorsClosed (between platforms)."
+      },
+      {
+        "id": "I06_E_EvacuationExists",
+        "kind": "OBJECT",
+        "type": "EvacuationBubble",
+        "negated": false,
+        "guardType": "EmergencyStop",
+        "traceTo": "E7-E8",
+        "description": "An EvacuationBubble object is instantiated during an EmergencyStop."
+      },
+      {
+        "id": "I06_E_PIC_Evacuation",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "PICPort",
+        "type": "EvacuationBubble",
+        "negated": false,
+        "traceTo": "E7",
+        "description": "EvacuationBubble reaches the PassengerInformationComponent through PICPort."
+      },
+      {
+        "id": "I06_E_SCR_Evacuation",
+        "kind": "LINK",
+        "relation": "allowedBubbles",
+        "source": "screenPort",
+        "type": "EvacuationBubble",
+        "negated": false,
+        "traceTo": "E8",
+        "description": "EvacuationBubble reaches the OperationScreen through screenPort."
+      },
+      {
+        "id": "I06_EN_NoEvacuation",
+        "kind": "OBJECT",
+        "type": "EvacuationBubble",
+        "negated": true,
+        "guardType": "EmergencyStop",
+        "traceTo": "E10",
+        "description": "Negative branch: an EmergencyStop test in which NO EvacuationBubble exists."
+      },
+      {
+        "id": "I06_EN_NoArrivalEvent",
+        "kind": "OBJECT",
+        "type": "ArrivalEvent",
+        "negated": true,
+        "guardType": "EmergencyStop",
+        "traceTo": "E11",
+        "description": "Safety side condition: an EmergencyStop test witnessing that no ArrivalEvent exists."
+      },
+      {
+        "id": "I06_EN_NoDepartureEvent",
+        "kind": "OBJECT",
+        "type": "DepartureEvent",
+        "negated": true,
+        "guardType": "EmergencyStop",
+        "traceTo": "E12",
+        "description": "Safety side condition: an EmergencyStop test witnessing that no DepartureEvent exists."
+      },
+      {
+        "id": "I06_EN_NoStandstill",
+        "kind": "OBJECT",
+        "type": "StandstillBubble",
+        "negated": true,
+        "guardType": "EmergencyStop",
+        "traceTo": "E13",
+        "description": "Safety side condition: an EmergencyStop test witnessing that no StandstillBubble exists."
       }
     ]
   }

@@ -98,6 +98,32 @@ function buildRepairHints(lastError: string): string[] {
     hints.add(`A declaration was left unterminated. Every pred/error declaration must end with a '.' character.`);
   }
 
+  const unsatScenarios = [...lastError.matchAll(/Test scenario (\S+) is UNSATISFIABLE/g)].map(m => m[1]);
+  if (unsatScenarios.length > 0) {
+    hints.add(
+      `Test scenario(s) ${unsatScenarios.join(', ')} describe a situation that cannot exist. Check that ` +
+      `(a) every object contained by the event is attached through the event's own containment reference ` +
+      `with a class that reference accepts, (b) you did not create new Train/System/Platform/Port/component objects ` +
+      `and did not reuse an existing node name for a new object, and (c) your own error rules do not forbid a LEGAL ` +
+      `situation - a NEGATIVE scenario must still be a legal state, so if it is rejected your constraints are too strong.`
+    );
+  }
+
+  if (/contained no testScenarios|has no refineryFacts/.test(lastError)) {
+    hints.add(
+      `Return a non-empty 'testScenarios' array. Every scenario needs non-empty 'refineryFacts' that pin the input ` +
+      `situation, and the suite needs both POSITIVE and NEGATIVE scenarios.`
+    );
+  }
+
+  const timedOut = [...lastError.matchAll(/Test scenario (\S+) TIMED OUT/g)].map(m => m[1]);
+  if (timedOut.length > 0) {
+    hints.add(
+      `The solver could not complete test scenario(s) ${timedOut.join(', ')} in time. Pin the situation more ` +
+      `explicitly: assert the event, attach it with trainEvent(t1, ...), and assert every object the event contains.`
+    );
+  }
+
   return [...hints];
 }
 
@@ -110,9 +136,10 @@ app.post('/generate-validated-scenario', async (req: Request, res: Response) => 
     const nodeNames = extractNodeNames(metaModel);
 
     let systemMessage = `You are a Test Engineer and a formal verification expert for an Autonomous Train system.
-Your task is twofold:
+Your task is threefold:
 1. Generate ONLY THE MISSING 'pred' and 'error' constraints for the Refinery model.
 2. Create a clean, ATOMIC Test Strategy from the requirement.
+3. Design the TEST SUITE as concrete Refinery test scenarios (see RULE 3).
 
 =====================================================================
 RULE 0 - NEVER REDECLARE ANYTHING (this is the #1 cause of rejection)
@@ -163,6 +190,34 @@ error gen_<violationName>(<Class> <var>) <->
     <condition atoms>,
     !gen_<helperName>(<var>).
 
+=====================================================================
+RULE 3 - TEST SCENARIOS (this IS the test suite that gets measured)
+=====================================================================
+Constraints alone are not a test suite: the solver would return arbitrary models that all fall
+into the same branch, so the negative / ELSE side of the requirement would never be tested.
+Therefore you MUST design 'testScenarios'. A scenario pins ONLY the INPUT situation with a few
+concrete facts; Refinery completes the model from the metamodel and your constraints, derives the
+outputs, and REJECTS the scenario if the situation is impossible.
+
+Coverage rules for the suite:
+* POSITIVE: for every rule at least one scenario in which all of its conditions hold.
+* NEGATIVE: for every condition at least one scenario in which it does NOT hold, while the situation
+  is still a LEGAL state of the system (e.g. a different event, or a different value of the same choice).
+* ALTERNATIVES: if the requirement lists alternatives (several causes, locations, values),
+  every alternative must appear in at least one scenario.
+* Make the scenarios differ from each other; prefer a few diverse scenarios over many similar ones.
+
+Fact syntax - facts only, no pred / error / scope / default:
+* Class assertion:     ClassName(newNode).
+* Relation assertion:  relationName(node, node).
+* New object names: lowercase letters and digits (ev1, cause1, win1), never a RULE 1 node name.
+* The train is always t1. Its single event is attached with trainEvent(t1, <eventNode>).
+  Objects contained by the event are attached through the event's own containment references
+  exactly as declared in the metamodel.
+* Assert INPUTS only (the event and what it contains). Do NOT assert bubbles or allowedBubbles:
+  deriving the outputs is exactly what the model has to show.
+* Never create additional Train, System, Platform, Port, component or on-board computer objects.
+
 CRITICAL TEST STRATEGY RULES:
 1. STRICT SEPARATION: 'conditions' are ONLY inputs/states (e.g., trainSpeed is ZeroSpeed). 'expectations' are ONLY outputs/actions (e.g., sending a bubble). DO NOT put actions into conditions!
 2. ATOMIC EXPECTATIONS: Split compound expectations (e.g., "send to TMC OR PIC OR Screen") into E1: "send to TMC", E2: "send to PIC", E3: "send to Screen".
@@ -183,7 +238,11 @@ Your response MUST be strictly in JSON format:
           "rules": [
             {"logic": "C1 || C2", "result_ids": ["E1", "E2"]}
           ]
-        }
+        },
+        "testScenarios": [
+          {"id": "TS1", "covers": ["C1", "C2"], "description": "<positive case>", "refineryFacts": "<EventClass>(ev1).\\ntrainEvent(t1, ev1)."},
+          {"id": "TS2", "covers": ["!C1"], "description": "<negative case>", "refineryFacts": "<OtherEventClass>(ev1).\\ntrainEvent(t1, ev1)."}
+        ]
       }
       Use this metamodel to verify relationships: ${metaModel}`;
 
@@ -198,8 +257,9 @@ ${lastError}
         if (hints.length > 0) {
             systemMessage += `\nHow to fix it:\n${hints.map((h, i) => `${i + 1}. ${h}`).join('\n')}\n`;
         }
-        systemMessage += `\nRewrite the WHOLE 'missingRefineryCode' from scratch, keep it as small as possible,
-prefix every new name with "gen_", and reuse the already existing relations listed in RULE 0.`;
+        systemMessage += `\nRewrite the WHOLE answer from scratch: keep 'missingRefineryCode' as small as possible,
+prefix every new name with "gen_", reuse the already existing relations listed in RULE 0, and return
+a complete 'testScenarios' array that follows RULE 3.`;
     }
 
     //AI hivasa

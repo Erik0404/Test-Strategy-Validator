@@ -11,17 +11,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Object coverage of a test suite (a set of instance models produced by Refinery)
- * with respect to the manually derived coverage obligations of a requirement.
- *
- * Key difference from the earlier, text-based metric:
- *   the denominator is fixed (the ground-truth item set), it does not grow with the number
- *       of models;
- *    coverage is the union over the suite: an item is covered if at least one
- *       model witnesses it;
- *   matching happens on Datalog facts, not on natural-language fragments.
- */
 public final class ObjectCoverageCalculator {
 
     private static final Pattern FACT_PATTERN =
@@ -34,9 +23,7 @@ public final class ObjectCoverageCalculator {
         public String reqId;
         public int suiteSize;
         public List<String> itemIds = new ArrayList<>();
-        /** Union over the suite, aligned with {@link #itemIds}. */
         public boolean[] covered = new boolean[0];
-        /** Per model coverage vectors, aligned with {@link #itemIds}. */
         public List<boolean[]> perModel = new ArrayList<>();
 
         public int totalItems() {
@@ -71,10 +58,6 @@ public final class ObjectCoverageCalculator {
             return ids;
         }
 
-        /**
-         * Number of models that cover at least one item no earlier model had covered.
-         * A low value next to a large suite means the generator produced redundant tests.
-         */
         public int contributingModels() {
             boolean[] acc = new boolean[itemIds.size()];
             int contributing = 0;
@@ -110,9 +93,10 @@ public final class ObjectCoverageCalculator {
             boolean[] vector = new boolean[items.size()];
             for (int i = 0; i < items.size(); i++) {
                 CoverageItem item = items.get(i);
+                boolean applicable = item.guardType == null || !parsed.nodesOfType(item.guardType).isEmpty();
                 boolean holds = patternHolds(item, parsed);
                 // A negated item is witnessed by a model in which the pattern does NOT hold.
-                vector[i] = item.negated != holds;
+                vector[i] = applicable && (item.negated != holds);
                 if (vector[i]) {
                     result.covered[i] = true;
                 }
@@ -122,15 +106,20 @@ public final class ObjectCoverageCalculator {
         return result;
     }
 
-    /** Evaluates the positive form of the item against a single instance model. */
     private static boolean patternHolds(CoverageItem item, ParsedModel model) {
         if (item.kind == CoverageItem.Kind.OBJECT) {
             return !model.nodesOfType(item.type).isEmpty();
         }
-        Set<String> targets = model.targetsOf(item.relation, item.source);
-        if (targets.isEmpty()) {
-            return false;
+        Set<String> sources = item.source != null ? Set.of(item.source) : model.nodesOfType(item.sourceType);
+        for (String source : sources) {
+            if (linksToMatchingTarget(item, model, model.targetsOf(item.relation, source))) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    private static boolean linksToMatchingTarget(CoverageItem item, ParsedModel model, Set<String> targets) {
         if (item.target != null && !item.target.isBlank()) {
             return targets.contains(item.target);
         }
@@ -142,11 +131,8 @@ public final class ObjectCoverageCalculator {
         return false;
     }
 
-    /** Indexed view over the raw {@code relation(arg, ...)} strings of one solution. */
     private static final class ParsedModel {
-        /** class name -> nodes asserted to belong to it. */
         private final Map<String, Set<String>> typeIndex = new HashMap<>();
-        /** "relation|source" -> target nodes of binary facts. */
         private final Map<String, Set<String>> binaryIndex = new HashMap<>();
 
         static ParsedModel of(Set<String> facts) {
