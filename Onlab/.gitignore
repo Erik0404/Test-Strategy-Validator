@@ -38,5 +38,9 @@ bin/
 ### VS Code ###
 .vscode/
 
+### Python (analysis) ###
+analysis/.venv/
+__pycache__/
+
 ### Mac OS ###
 .DS_Store

@@ -1,5 +1,8 @@
 {
   "type": "module",
+  "scripts": {
+    "start": "node --use-system-ca --import tsx server.ts"
+  },
   "dependencies": {
     "@tools.refinery/client": "latest",
     "axios": "^1.13.6",

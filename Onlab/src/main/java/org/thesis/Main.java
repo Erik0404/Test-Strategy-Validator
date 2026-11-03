@@ -5,61 +5,143 @@ import org.thesis.benchmark.CoverageComparator;
 import org.thesis.benchmark.ManualSuiteRunner;
 import org.thesis.refinery.RefineryValidator;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class Main {
 
     private static final String META_MODEL = "src/main/resources/temp.problem";
     private static final String GROUND_TRUTH = "src/main/resources/coverage/ground_truth.json";
     private static final String DATASET = "src/main/resources/benchmark_requirements.json";
-    private static final String MANUAL_CSV = "manual_coverage.csv";
-    private static final String MANUAL_REPORT = "ManualCoverageReport.md";
-    private static final String BENCHMARK_CSV = "benchmark_results.csv";
-    private static final String COMPARISON_CSV = "coverage_comparison.csv";
+    private static final Path RESULTS = Path.of("results");
+    private static final String PLOT_SCRIPT = "analysis/run_plots.py";
+    private static final String STAMP = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+    private static final Pattern BENCHMARK_NAME = Pattern.compile("benchmark_results_(.+)\\.csv");
 
     public static void main(String[] args) throws Exception {
         String mode = args.length > 0 ? args[0].toLowerCase() : "manual";
+        Files.createDirectories(RESULTS);
 
         switch (mode) {
             case "manual" -> runManual();
             case "benchmark" -> runBenchmark();
-            case "compare" -> runCompare();
+            case "compare" -> runCompare(benchmarkArgument(args));
+            case "plots" -> runPlots(benchmarkArgument(args));
             case "explore" -> runExplore(args);
             case "all" -> {
                 runManual();
-                runBenchmark();
-                runCompare();
+                Path benchmark = runBenchmark();
+                runCompare(benchmark);
+                runPlots(benchmark);
             }
             default -> {
                 System.out.println("""
                         Hasznalat: Main <mode>
                           manual     - a kezzel irt (golden) teszt-keszletek futtatasa es lefedettsegmerese (nincs LLM hivas)
                           benchmark  - az LLM altal generalt teszt-keszletek merese (LLM hivasokkal)
-                          compare    - a ket eredmeny osszevetese, korrelacio szamitasa
+                          compare    - compare [benchmark-csv]: a kezi es a generalt eredmeny osszevetese
+                          plots      - plots [benchmark-csv]: szakdolgozatba illo abrak es tablazatok (Python)
                           explore    - explore <szcenario-fajl> [modellek szama]: a metamodell + szcenario
                                        megoldasainak kiirasa, pontosan azokkal a tenyekkel, amiket a meres lat
-                          all        - manual + benchmark + compare egymas utan""");
+                          all        - manual + benchmark + compare + plots egymas utan
+                        Minden kimenet idobelyeggel a results/ mappaba kerul; compare es plots alapbol a
+                        legfrissebb benchmark_results_*.csv fajlt hasznalja.""");
             }
         }
     }
 
-    private static void runManual() throws Exception {
+    private static Path runManual() throws Exception {
         System.out.println("### 1. lepes: kezi (golden) teszt-keszlet lefedettsege ###");
-        new ManualSuiteRunner(10).run(GROUND_TRUTH, META_MODEL, MANUAL_CSV, MANUAL_REPORT);
+        Path csv = RESULTS.resolve("manual_coverage_" + STAMP + ".csv");
+        Path report = RESULTS.resolve("ManualCoverageReport_" + STAMP + ".md");
+        new ManualSuiteRunner(10).run(GROUND_TRUTH, META_MODEL, csv.toString(), report.toString());
+        return csv;
     }
 
-    private static void runBenchmark() throws Exception {
+    private static Path runBenchmark() throws Exception {
         System.out.println("### 2. lepes: LLM altal generalt teszt-keszletek ###");
+        Path csv = RESULTS.resolve("benchmark_results_" + STAMP + ".csv");
         // 3 javitasi iteracio engedelyezett, kovetelmenyenkent 3 fuggetlen futas
-        new BenchmarkRunner(3, 3).run(DATASET, META_MODEL, GROUND_TRUTH, BENCHMARK_CSV);
+        new BenchmarkRunner(3, 3).run(DATASET, META_MODEL, GROUND_TRUTH, csv.toString());
+        return csv;
     }
 
-    private static void runCompare() throws Exception {
+    private static void runCompare(Path benchmark) throws Exception {
         System.out.println("### 3. lepes: kezi vs. generalt osszevetes ###");
-        new CoverageComparator().report(GROUND_TRUTH, MANUAL_CSV, BENCHMARK_CSV, COMPARISON_CSV);
+        Path output = RESULTS.resolve("coverage_comparison_" + tagOf(benchmark) + ".csv");
+        new CoverageComparator().report(GROUND_TRUTH, manualCsv().toString(), benchmark.toString(), output.toString());
+    }
+
+    private static void runPlots(Path benchmark) throws Exception {
+        System.out.println("### 4. lepes: abrak es tablazatok ###");
+        List<String> arguments = List.of(PLOT_SCRIPT,
+                "--benchmark", benchmark.toString(),
+                "--manual", manualCsv().toString(),
+                "--ground-truth", GROUND_TRUTH,
+                "--out", RESULTS.resolve("figures_" + tagOf(benchmark)).toString());
+
+        for (String python : List.of("py", "python", "python3")) {
+            List<String> command = new ArrayList<>();
+            command.add(python);
+            command.addAll(arguments);
+            Process process;
+            try {
+                process = new ProcessBuilder(command).inheritIO().start();
+            } catch (IOException notInstalled) {
+                continue;
+            }
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new IllegalStateException("Az abrakeszito szkript hibaval allt le (kilepesi kod: " + exitCode + ").");
+            }
+            return;
+        }
+        throw new IllegalStateException("Nem talalhato Python (py / python / python3). Telepits Python 3.10+ verziot.");
+    }
+
+    private static Path benchmarkArgument(String[] args) throws IOException {
+        if (args.length > 1) {
+            return Path.of(args[1]);
+        }
+        Path latest = latest("benchmark_results_");
+        if (latest == null) {
+            throw new IllegalStateException("Nincs benchmark_results_*.csv a " + RESULTS + " mappaban - futtasd elobb a 'benchmark' modot.");
+        }
+        return latest;
+    }
+
+    private static Path manualCsv() throws Exception {
+        Path latest = latest("manual_coverage_");
+        return latest != null ? latest : runManual();
+    }
+
+    private static Path latest(String prefix) throws IOException {
+        try (Stream<Path> files = Files.list(RESULTS)) {
+            return files
+                    .filter(path -> path.getFileName().toString().startsWith(prefix))
+                    .filter(path -> path.getFileName().toString().endsWith(".csv"))
+                    .max(Comparator.comparing(path -> path.getFileName().toString()))
+                    .orElse(null);
+        }
+    }
+
+    private static String tagOf(Path benchmark) {
+        String name = benchmark.getFileName().toString();
+        Matcher matcher = BENCHMARK_NAME.matcher(name);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        return name.endsWith(".csv") ? name.substring(0, name.length() - 4) : name;
     }
 
     private static void runExplore(String[] args) throws Exception {
