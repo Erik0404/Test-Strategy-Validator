@@ -48,7 +48,11 @@ function extractNodeNames(metaModel: string): string[] {
   return [...names];
 }
 
-/** A Refinery nyers hibauzenetebol celzott, cselekvesre fordithato javitasi tanacsot keszit. */
+/** Osztalyok, amelyeknek a metamodell nem enged uj peldanyt (!exists(X::new)). */
+function extractFixedClasses(metaModel: string): string[] {
+  return [...new Set([...metaModel.matchAll(/!exists\(\s*([A-Za-z_]\w*)::new\s*\)/g)].map(m => m[1]))];
+}
+
 function buildRepairHints(lastError: string): string[] {
   const hints = new Set<string>();
 
@@ -66,9 +70,9 @@ function buildRepairHints(lastError: string): string[] {
   const unresolved = [...lastError.matchAll(/Couldn't resolve reference to Relation '([A-Za-z_]\w*)'/g)].map(m => m[1]);
   if (unresolved.length > 0) {
     hints.add(
-      `You called ${unresolved.join(', ')} as if it were a class or predicate, but it is a concrete NODE instance. ` +
-      `Nodes may only appear as ARGUMENTS, e.g. allowedBubbles(TMCPort, b) - never as TMCPort(p). ` +
-      `To test "p is the TMC port" use the existing helper isTargetTmc(p) (likewise isTargetPic, isTargetOscr).`
+      `${unresolved.join(', ')} is not declared in the metamodel as a class, relation or predicate. ` +
+      `Use only names declared in the metamodel or your own gen_ predicates. ` +
+      `Concrete node names may appear only as arguments, never as a relation call.`
     );
   }
 
@@ -89,8 +93,7 @@ function buildRepairHints(lastError: string): string[] {
 
   if (/no viable alternative at input '='/.test(lastError)) {
     hints.add(
-      `You used '='. There is no assignment or equality operator here; express everything with relation atoms ` +
-      `and the existing helper predicates.`
+      `You used '='. There is no assignment or equality operator here; express everything with relation atoms.`
     );
   }
 
@@ -98,29 +101,9 @@ function buildRepairHints(lastError: string): string[] {
     hints.add(`A declaration was left unterminated. Every pred/error declaration must end with a '.' character.`);
   }
 
-  const unsatScenarios = [...lastError.matchAll(/Test scenario (\S+) is UNSATISFIABLE/g)].map(m => m[1]);
-  if (unsatScenarios.length > 0) {
-    hints.add(
-      `Test scenario(s) ${unsatScenarios.join(', ')} describe a situation that cannot exist. Check that ` +
-      `(a) every object contained by the event is attached through the event's own containment reference ` +
-      `with a class that reference accepts, (b) you did not create new Train/System/Platform/Port/component objects ` +
-      `and did not reuse an existing node name for a new object, and (c) your own error rules do not forbid a LEGAL ` +
-      `situation - a NEGATIVE scenario must still be a legal state, so if it is rejected your constraints are too strong.`
-    );
-  }
-
   if (/contained no testScenarios|has no refineryFacts/.test(lastError)) {
     hints.add(
-      `Return a non-empty 'testScenarios' array. Every scenario needs non-empty 'refineryFacts' that pin the input ` +
-      `situation, and the suite needs both POSITIVE and NEGATIVE scenarios.`
-    );
-  }
-
-  const timedOut = [...lastError.matchAll(/Test scenario (\S+) TIMED OUT/g)].map(m => m[1]);
-  if (timedOut.length > 0) {
-    hints.add(
-      `The solver could not complete test scenario(s) ${timedOut.join(', ')} in time. Pin the situation more ` +
-      `explicitly: assert the event, attach it with trainEvent(t1, ...), and assert every object the event contains.`
+      `Return a non-empty 'testScenarios' array, and give every scenario non-empty 'refineryFacts'.`
     );
   }
 
@@ -134,50 +117,52 @@ app.post('/generate-validated-scenario', async (req: Request, res: Response) => 
 
     const reservedNames = extractDeclaredRelations(metaModel);
     const nodeNames = extractNodeNames(metaModel);
+    const fixedClasses = extractFixedClasses(metaModel);
 
-    let systemMessage = `You are a Test Engineer and a formal verification expert for an Autonomous Train system.
+    let systemMessage = `You are a test engineer and a formal verification expert for safety-critical systems.
+The system is described by the Refinery metamodel given at the end of this message.
 Your task is threefold:
 1. Generate ONLY THE MISSING 'pred' and 'error' constraints for the Refinery model.
 2. Create a clean, ATOMIC Test Strategy from the requirement.
 3. Design the TEST SUITE as concrete Refinery test scenarios (see RULE 3).
 
 =====================================================================
-RULE 0 - NEVER REDECLARE ANYTHING (this is the #1 cause of rejection)
+RULE 0 - NEVER REDECLARE ANYTHING
 =====================================================================
 The metamodel ALREADY declares these relations:
 ${reservedNames.join(', ')}
 You MUST NOT declare any of them again - re-emitting them causes "Duplicate name" and
 "Ambiguous reference" errors and your whole answer is thrown away. Call them, do not redefine them.
 Every NEW declaration you introduce MUST carry the "gen_" prefix
-(e.g. 'pred gen_hasStandstillOnTmc(Port p) <-> ...'), which guarantees the name is free.
+(e.g. 'pred gen_<descriptiveName>(<Class> x) <-> ...'), which guarantees the name is free.
 Output ONLY your new declarations - never copy any part of the metamodel back.
 
 =====================================================================
 RULE 1 - NODES ARE NOT CLASSES
 =====================================================================
-These are concrete NODE instances, not classes and not predicates:
+These are concrete NODE instances declared in the metamodel, not classes and not predicates:
 ${nodeNames.join(', ')}
-They may appear ONLY as arguments:  allowedBubbles(TMCPort, b)   [correct]
-Never as a relation call:           TMCPort(p)                   [WRONG -> "Couldn't resolve reference"]
-To identify a port use the existing helpers isTargetTmc(p), isTargetPic(p), isTargetOscr(p), isTargetPort(p).
+They may appear ONLY as arguments:  someRelation(NodeName, x)   [correct]
+Never as a relation call:           NodeName(x)                 [WRONG -> "Couldn't resolve reference"]
+If the metamodel already declares a helper predicate for a concept, call it instead of re-implementing it.
 
 =====================================================================
 RULE 2 - REFINERY DATALOG SYNTAX
 =====================================================================
 * AND is ',' - OR is ';' - NOT is '!'.
 * ';' may ONLY separate top-level clause bodies. Parenthesised disjunction is FORBIDDEN:
-      WRONG:   pred p(Port x) <-> allowedBubbles(x, b), (ArrivalEvent(b); StandstillBubble(b)).
-      CORRECT: pred gen_relevantBubble(Bubble b) <-> ArrivalEvent(b); StandstillBubble(b).
-               pred gen_p(Port x) <-> allowedBubbles(x, b), gen_relevantBubble(b).
+      WRONG:   pred p(A x) <-> r(x, y), (B(y); C(y)).
+      CORRECT: pred gen_bOrC(D y) <-> B(y); C(y).
+               pred gen_p(A x) <-> r(x, y), gen_bOrC(y).
 * Every body element must be a relation call or its negation: Relation(args) or !Relation(args).
   A bare variable or node is not a boolean -> "Expected boolean expression; got node instead".
-* Head parameters must be TYPED:  pred gen_x(Train t, Port p) <-> ... .
+* Head parameters must be TYPED:  pred gen_q(A x, B y) <-> ... .
 * Variables are implicitly existentially quantified - there is NO 'exists' keyword.
 * There is no '=' operator.
 * '_' is the anonymous variable.
 * Every declaration ends with a '.'.
-* DO NOT invent new classes or events. Use ONLY elements explicitly defined in the metamodel.
-* Keep the output MINIMAL: one or two helper preds plus the error rules the requirement really needs.
+* DO NOT invent new classes or relations. Use ONLY elements explicitly defined in the metamodel.
+* Keep the output MINIMAL: only the helper preds and error rules the requirement really needs.
 * ANTI-CHEAT: You MUST write actual 'error' (and optionally 'pred') Datalog code. You CANNOT return an empty string or just a comment.
 
 Shape to follow:
@@ -202,25 +187,26 @@ outputs, and REJECTS the scenario if the situation is impossible.
 Coverage rules for the suite:
 * POSITIVE: for every rule at least one scenario in which all of its conditions hold.
 * NEGATIVE: for every condition at least one scenario in which it does NOT hold, while the situation
-  is still a LEGAL state of the system (e.g. a different event, or a different value of the same choice).
-* ALTERNATIVES: if the requirement lists alternatives (several causes, locations, values),
-  every alternative must appear in at least one scenario.
+  is still a LEGAL state of the system.
+* ALTERNATIVES: if the requirement lists alternatives, every alternative must appear in at least one scenario.
 * Make the scenarios differ from each other; prefer a few diverse scenarios over many similar ones.
+* In 'covers' list the condition IDs the scenario exercises; prefix an ID with '!' when the scenario
+  makes that condition FALSE.
 
 Fact syntax - facts only, no pred / error / scope / default:
 * Class assertion:     ClassName(newNode).
 * Relation assertion:  relationName(node, node).
-* New object names: lowercase letters and digits (ev1, cause1, win1), never a RULE 1 node name.
-* The train is always t1. Its single event is attached with trainEvent(t1, <eventNode>).
-  Objects contained by the event are attached through the event's own containment references
-  exactly as declared in the metamodel.
-* Assert INPUTS only (the event and what it contains). Do NOT assert bubbles or allowedBubbles:
-  deriving the outputs is exactly what the model has to show.
-* Never create additional Train, System, Platform, Port, component or on-board computer objects.
+* New object names: lowercase letters and digits (obj1, obj2), never one of the RULE 1 node names.
+* Attach every new object to the existing structure through the relations and containment references
+  declared in the metamodel.
+* Assert INPUTS only (the situation the conditions talk about). Do NOT assert the outputs the requirement
+  expects: deriving them is exactly what the model has to show.
+* Never create new objects of these classes - their instances are fixed by the metamodel:
+  ${fixedClasses.join(', ')}
 
 CRITICAL TEST STRATEGY RULES:
-1. STRICT SEPARATION: 'conditions' are ONLY inputs/states (e.g., trainSpeed is ZeroSpeed). 'expectations' are ONLY outputs/actions (e.g., sending a bubble). DO NOT put actions into conditions!
-2. ATOMIC EXPECTATIONS: Split compound expectations (e.g., "send to TMC OR PIC OR Screen") into E1: "send to TMC", E2: "send to PIC", E3: "send to Screen".
+1. STRICT SEPARATION: 'conditions' are ONLY inputs/states (e.g. "the system is in state S"). 'expectations' are ONLY outputs/actions (e.g. "component X receives message M"). DO NOT put actions into conditions!
+2. ATOMIC EXPECTATIONS: Split compound expectations (e.g. "send M to A, B and C") into E1: "send M to A", E2: "send M to B", E3: "send M to C".
 3. RULE LOGIC SYNTAX: The 'logic' field can ONLY contain condition IDs (e.g., C1, C2) and logical operators (&&, ||, !).
 Your response MUST be strictly in JSON format:
       {
@@ -240,8 +226,8 @@ Your response MUST be strictly in JSON format:
           ]
         },
         "testScenarios": [
-          {"id": "TS1", "covers": ["C1", "C2"], "description": "<positive case>", "refineryFacts": "<EventClass>(ev1).\\ntrainEvent(t1, ev1)."},
-          {"id": "TS2", "covers": ["!C1"], "description": "<negative case>", "refineryFacts": "<OtherEventClass>(ev1).\\ntrainEvent(t1, ev1)."}
+          {"id": "TS1", "covers": ["C1", "C2"], "description": "<positive case>", "refineryFacts": "<ClassName>(obj1).\\n<relationName>(<ExistingNode>, obj1)."},
+          {"id": "TS2", "covers": ["!C1"], "description": "<negative case>", "refineryFacts": "<OtherClassName>(obj1).\\n<relationName>(<ExistingNode>, obj1)."}
         ]
       }
       Use this metamodel to verify relationships: ${metaModel}`;

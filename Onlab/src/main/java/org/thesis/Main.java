@@ -71,8 +71,8 @@ public class Main {
     private static Path runBenchmark() throws Exception {
         System.out.println("### 2. lepes: LLM altal generalt teszt-keszletek ###");
         Path csv = RESULTS.resolve("benchmark_results_" + STAMP + ".csv");
-        // 3 javitasi iteracio engedelyezett, kovetelmenyenkent 3 fuggetlen futas
-        new BenchmarkRunner(3, 3).run(DATASET, META_MODEL, GROUND_TRUTH, csv.toString());
+        // 3 javitasi iteracio engedelyezett, kovetelmenyenkent 5 fuggetlen futas
+        new BenchmarkRunner(3, 5).run(DATASET, META_MODEL, GROUND_TRUTH, csv.toString());
         return csv;
     }
 

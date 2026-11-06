@@ -53,6 +53,7 @@ TEXT = {
         "share_runs": "Share of runs [%]",
         "tokens": "Tokens per run [×10³]",
         "scenarios": "Test scenarios per suite",
+        "excluded": "Infeasible negative (excluded)",
         "manual_min": "Manual minimal suite",
         "heat_manual": "Manual",
         "heat_llm": "LLM",
@@ -87,6 +88,7 @@ TEXT = {
         "share_runs": "Futások aránya [%]",
         "tokens": "Token / futás [×10³]",
         "scenarios": "Tesztszcenáriók száma",
+        "excluded": "Lehetetlen negatív (kizárva)",
         "manual_min": "Kézi minimális készlet",
         "heat_manual": "Kézi",
         "heat_llm": "LLM",
@@ -116,6 +118,10 @@ CAPTIONS = {
                 "valid answer after the last repair round. (b) Tokens consumed per run, summed over all repair "
                 "rounds.",
         "fig5": "Number of test scenarios designed by the LLM per suite compared with the minimal manual suite.",
+        "fig5x": "Number of test scenarios designed by the LLM per suite compared with the minimal manual suite. "
+                 "Hatched: scenarios declared as negative cases that are unsatisfiable already in the system "
+                 "model (without the generated constraints); they were excluded from the suite and are not "
+                 "counted in the coverage.",
         "fig6": "Coverage items of {req}: the manual suite and the share of successful runs in which the "
                 "generated suite (and the solver-only ablation) witnessed the item.",
     },
@@ -133,6 +139,10 @@ CAPTIONS = {
                 "javítási körre összegezve.",
         "fig5": "Az LLM által tervezett tesztszcenáriók száma készletenként, a kézi minimális készlettel "
                 "összevetve.",
+        "fig5x": "Az LLM által tervezett tesztszcenáriók száma készletenként, a kézi minimális készlettel "
+                 "összevetve. Sraffozva: a negatív esetként megjelölt szcenáriók, amelyek már a rendszermodellben "
+                 "(a generált megszorítások nélkül) kielégíthetetlenek; ezek kikerültek a készletből, és a "
+                 "lefedettségbe nem számítanak bele.",
         "fig6": "{req} lefedettségi elemei: a kézi készlet, valamint azon sikeres futások aránya, amelyekben a "
                 "generált készlet (és a csak solveres abláció) tanúsította az elemet.",
     },
@@ -205,6 +215,7 @@ def read_benchmark(path):
         "success": raw["Success"].str.strip().str.lower() == "true",
         "iterations": numeric("Iterations"),
         "scenarios": numeric("Scenarios"),
+        "infeasible": numeric("Infeasible_Negatives"),
         "tokens": numeric("Total_Tokens"),
         "covered_ids": raw["Covered_Item_Ids"].map(split_ids),
     })
@@ -348,6 +359,8 @@ def compute_summary(data):
         "successful_runs": int(len(ok)),
         "success_rate": float(len(ok) / len(runs)) if len(runs) else np.nan,
         "mean_iterations_successful": float(ok["iterations"].mean()) if len(ok) else np.nan,
+        "excluded_infeasible_negatives": int(ok["infeasible"].fillna(0).sum()),
+        "runs_with_excluded_scenarios": int(ok["infeasible"].fillna(0).gt(0).sum()),
         "llm": {"pooled_recall_vs_manual": pooled_recall("covered_ids"),
                 **correlation(ok["manual_covered"], ok["covered"])},
         "solver_only": {"pooled_recall_vs_manual": pooled_recall("base_ids"),
@@ -568,8 +581,13 @@ def figure_suite_size(data, lang, out_dir):
     x = np.arange(len(data.reqs))
     fig, ax = plt.subplots(figsize=(TEXT_WIDTH_IN * 0.75, 2.6))
     per_req = [ok.loc[ok["req"] == req, "scenarios"].to_numpy() for req in data.reqs]
-    ax.bar(x, [values.mean() if len(values) else np.nan for values in per_req], 0.6, color=colors["llm"],
-           edgecolor="black", linewidth=0.4, zorder=2, label=text["llm"])
+    used = np.array([values.mean() if len(values) else np.nan for values in per_req])
+    ax.bar(x, used, 0.6, color=colors["llm"], edgecolor="black", linewidth=0.4, zorder=2, label=text["llm"])
+    excluded = np.array([ok.loc[ok["req"] == req, "infeasible"].fillna(0).mean() for req in data.reqs])
+    has_excluded = bool(np.nan_to_num(excluded).any())
+    if has_excluded:
+        ax.bar(x, excluded, 0.6, bottom=np.nan_to_num(used), color="white", hatch="////", edgecolor="0.35",
+               linewidth=0.4, zorder=2, label=text["excluded"])
     rng = np.random.default_rng(5)
     for i, values in enumerate(per_req):
         ax.scatter(x[i] + rng.uniform(-0.15, 0.15, len(values)), values, s=8, color="black", alpha=0.75,
@@ -584,7 +602,7 @@ def figure_suite_size(data, lang, out_dir):
     ax.grid(axis="x", visible=False)
     ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, frameon=False)
     save(fig, out_dir, "fig5_suite_size")
-    return "fig5_suite_size", "fig5", "0.75\\textwidth"
+    return "fig5_suite_size", "fig5x" if has_excluded else "fig5", "0.75\\textwidth"
 
 
 def figure_item_heatmaps(data, lang, out_dir):
@@ -640,6 +658,7 @@ def requirement_summary(data):
             "Successful_Runs": len(ok),
             "Mean_Iterations": ok["iterations"].mean() if len(ok) else np.nan,
             "Mean_LLM_Scenarios": ok["scenarios"].mean() if data.has_scenarios and len(ok) else np.nan,
+            "Excluded_Infeasible_Negatives": int(ok["infeasible"].fillna(0).sum()),
             "LLM_Coverage_Mean_Pct": ok["coverage_pct"].mean() if len(ok) else np.nan,
             "LLM_Coverage_Std_Pct": ok["coverage_pct"].std(ddof=1) if len(ok) > 1 else np.nan,
             "Solver_Only_Coverage_Mean_Pct": ok["base_pct"].mean() if data.has_base and len(ok) else np.nan,

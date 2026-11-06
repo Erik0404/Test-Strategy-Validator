@@ -1,6 +1,7 @@
 package org.thesis.refinery;
 
 import tools.refinery.generator.GeneratorResult;
+import tools.refinery.generator.InvalidProblemException;
 import tools.refinery.generator.ModelGenerator;
 import tools.refinery.generator.standalone.StandaloneRefinery;
 import tools.refinery.language.model.problem.Problem;
@@ -18,8 +19,26 @@ import java.util.concurrent.TimeUnit;
 public class RefineryValidator {
     public static final long GENERATION_TIMEOUT_SECONDS = 15;
 
+    public enum Feasibility { FEASIBLE, INFEASIBLE, UNDECIDED }
+
     public void checkSyntax(String filePath) throws Exception {
         StandaloneRefinery.getProblemLoader().loadFile(filePath);
+    }
+
+    public Feasibility checkFeasibility(String filePath) throws Exception {
+        // A betoltesi (szintaktikai) hiba kivetelkent tovabbmegy: az nem bizonyitott ellentmondas.
+        var problem = StandaloneRefinery.getProblemLoader().loadFile(filePath);
+        try (var generator = StandaloneRefinery.getGeneratorFactory().createGenerator(problem)) {
+            generator.setMaxNumberOfSolutions(1);
+            return switch (generator.tryGenerateWithTimeout(GENERATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                case SUCCESS -> Feasibility.FEASIBLE;
+                case UNSATISFIABLE -> Feasibility.INFEASIBLE;
+                case TIMEOUT -> Feasibility.UNDECIDED;
+            };
+        } catch (InvalidProblemException e) {
+            // Sikeres betoltes utan ez azt jelenti, hogy mar a kiindulo tenyek ellentmondanak a modellnek.
+            return Feasibility.INFEASIBLE;
+        }
     }
 
     public List<Set<String>> validateAndExtractModels(String filePath, int maxSolutions) throws Exception {
