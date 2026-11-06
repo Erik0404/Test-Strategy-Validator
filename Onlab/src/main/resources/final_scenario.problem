@@ -378,6 +378,11 @@ error forbiddenArrivalBubbleExists() <->
     Departure(e),
     ArrivalEvent(_).
 
+error forbiddenStandstillBubbleExists() <->
+    trainEvent(_, e),
+    Departure(e),
+    StandstillBubble(_).
+
 % --- Emergency stop -------------------------------------------------------
 
 pred isWaysidePort(Port p) <->
@@ -477,17 +482,62 @@ scope ObstacleDetected = 0..1,
 
 scope EmergencyBubble = 0..1,
       EvacuationBubble = 0..1.
-pred gen_hasEmergencyOnTmc(Port p) <->
-    allowedBubbles(p, b),
-    EmergencyBubble(b).
+// Your syntax-perfect Datalog code here, every new name prefixed with gen_
+pred gen_obstacleDetectedEmergency() <->
+    trainEvent(_, e),
+    EmergencyStop(e),
+    emCause(e, oc),
+    ObstacleDetected(oc).
 
-error gen_missingEmergencyOnTmc(Port p) <->
-    hasEmergencyStop(),
-    isTargetTmc(p),
-    !gen_hasEmergencyOnTmc(p).
+pred gen_passengerAlarmEmergency() <->
+    trainEvent(_, e),
+    EmergencyStop(e),
+    emCause(e, pc),
+    PassengerAlarm(pc).
+
+pred gen_emergencyStop() <->
+    gen_obstacleDetectedEmergency();
+    gen_passengerAlarmEmergency().
+
+error gen_missingEmergencyBubbleAtTMC() <->
+    gen_emergencyStop(),
+    !hasEmergencyBubble(TMCPort).
+
+error gen_missingEmergencyBubbleAtPIC() <->
+    gen_emergencyStop(),
+    !hasEmergencyBubble(PICPort).
+
+error gen_missingEmergencyBubbleAtScreen() <->
+    gen_emergencyStop(),
+    !hasEmergencyBubble(screenPort).
+
+error gen_missingEmergencyBubbleAtWCU1() <->
+    gen_emergencyStop(),
+    !hasEmergencyBubble(WCU1Port).
+
+error gen_missingEmergencyBubbleAtWCU2() <->
+    gen_emergencyStop(),
+    !hasEmergencyBubble(WCU2Port).
+
+error gen_doorsNotOpenWithinStoppingWindow() <->
+    evacuationActive(),
+    trainEvent(_, e),
+    emDoors(e, d),
+    !DoorsOpen(d).
+
+error gen_unexpectedEvacuationBubbleOutsideStoppingWindow() <->
+    emergencyBetweenPlatforms(_),
+    hasEvacuationBubble(PICPort); hasEvacuationBubble(screenPort).
+
+error gen_regularBubblesDuringEmergency() <->
+    gen_emergencyStop(), ArrivalEvent(_);
+    gen_emergencyStop(), DepartureEvent(_);
+    gen_emergencyStop(), StandstillBubble(_).
 EmergencyStop(ev1).
+PassengerAlarm(pc1).
+emCause(ev1, pc1).
+emWindow(ev1, win1).
+OutsideStoppingWindow(win1).
+emDoors(ev1, d1).
+DoorsClosed(d1).
 trainEvent(t1, ev1).
-PassengerAlarm(c1).
-emCause(ev1, c1).
-OutsideStoppingWindow(w1).
-emWindow(ev1, w1).

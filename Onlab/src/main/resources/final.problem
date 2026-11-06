@@ -378,6 +378,11 @@ error forbiddenArrivalBubbleExists() <->
     Departure(e),
     ArrivalEvent(_).
 
+error forbiddenStandstillBubbleExists() <->
+    trainEvent(_, e),
+    Departure(e),
+    StandstillBubble(_).
+
 % --- Emergency stop -------------------------------------------------------
 
 pred isWaysidePort(Port p) <->
@@ -477,11 +482,53 @@ scope ObstacleDetected = 0..1,
 
 scope EmergencyBubble = 0..1,
       EvacuationBubble = 0..1.
-pred gen_hasEmergencyOnTmc(Port p) <->
-    allowedBubbles(p, b),
-    EmergencyBubble(b).
+// Your syntax-perfect Datalog code here, every new name prefixed with gen_
 
-error gen_missingEmergencyOnTmc(Port p) <->
-    hasEmergencyStop(),
-    isTargetTmc(p),
-    !gen_hasEmergencyOnTmc(p).
+pred gen_emergencyCause(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    (emCause(e, c), ObstacleDetected(c); emCause(e, c), PassengerAlarm(c)).
+
+error gen_noEmergencyBubbleToTmc(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    !hasEmergencyBubble(TMCPort).
+
+error gen_noEmergencyBubbleToPic(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    !hasEmergencyBubble(PICPort).
+
+error gen_noEmergencyBubbleToOscr(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    !hasEmergencyBubble(screenPort).
+
+error gen_noEmergencyBubbleToWcu1(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    !hasEmergencyBubble(WCU1Port).
+
+error gen_noEmergencyBubbleToWcu2(Train t) <->
+    trainEvent(t, e),
+    EmergencyStop(e),
+    !hasEmergencyBubble(WCU2Port).
+
+error gen_incorrectDoorsState(Train t) <->
+    trainEvent(t, e),
+    emergencyAtPlatform(e),
+    emDoors(e, d),
+    DoorsClosed(d).
+
+error gen_unallowedEvacuationBubble(Train t) <->
+    trainEvent(t, e),
+    emergencyBetweenPlatforms(e),
+    hasEvacuationBubble(PICPort);
+    trainEvent(t, e),
+    emergencyBetweenPlatforms(e),
+    hasEvacuationBubble(screenPort).
+
+error gen_regularBubbleDuringEmergency() <->
+    hasEmergencyStop(), ArrivalEvent(_);
+    hasEmergencyStop(), DepartureEvent(_);
+    hasEmergencyStop(), StandstillBubble(_. 

@@ -1,0 +1,38 @@
+{
+  "benchmark_csv": "results\\benchmark_results_20261106_093710.csv",
+  "manual_csv": "results\\manual_coverage_20261106_093710.csv",
+  "runs": 18,
+  "successful_runs": 5,
+  "success_rate": 0.2777777777777778,
+  "mean_iterations_successful": 1.8,
+  "llm": {
+    "pooled_recall_vs_manual": 0.94,
+    "n": 5,
+    "pearson_r": 0.9973406565808505,
+    "pearson_p": 0.00016455920383083832,
+    "spearman_rho": 0.7905694150420948,
+    "spearman_p": 0.11136715471408393
+  },
+  "solver_only": {
+    "pooled_recall_vs_manual": 0.3611111111111111,
+    "n": 3,
+    "pearson_r": -0.9707253433941511,
+    "pearson_p": 0.15442095831126593,
+    "spearman_rho": -0.8660254037844387,
+    "spearman_p": 0.33333333333333326
+  },
+  "category_coverage_pct": {
+    "llm/cond_neg": 66.66666666666666,
+    "llm/cond_pos": 100.0,
+    "llm/exp_neg": 90.0,
+    "llm/exp_pos": 100.0,
+    "manual/cond_neg": 100.0,
+    "manual/cond_pos": 100.0,
+    "manual/exp_neg": 100.0,
+    "manual/exp_pos": 100.0,
+    "solver/cond_neg": 25.0,
+    "solver/cond_pos": 33.33333333333333,
+    "solver/exp_neg": 37.5,
+    "solver/exp_pos": 38.88888888888889
+  }
+}
