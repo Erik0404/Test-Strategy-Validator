@@ -484,51 +484,42 @@ scope EmergencyBubble = 0..1,
       EvacuationBubble = 0..1.
 // Your syntax-perfect Datalog code here, every new name prefixed with gen_
 
-pred gen_emergencyCause(Train t) <->
+pred gen_obstacleOrAlarmCause(EmergencyStop e) <->
+    emCause(e, c),
+    (PassengerAlarm(c); ObstacleDetected(c)).
+
+pred gen_portsContainEmergency(Port p) <->
+    isEmergencyTargetPort(p),
+    allowedBubbles(p, b),
+    EmergencyBubble(b).
+
+pred gen_portsContainEvacuation(Port p) <->
+    isEvacuationTargetPort(p),
+    allowedBubbles(p, b),
+    EvacuationBubble(b).
+
+error gen_missingEmergencyBubbleFromObc(Train t) <->
     trainEvent(t, e),
     EmergencyStop(e),
-    (emCause(e, c), ObstacleDetected(c); emCause(e, c), PassengerAlarm(c)).
+    gen_obstacleOrAlarmCause(e),
+    (!gen_portsContainEmergency(TMCPort);
+     !gen_portsContainEmergency(PICPort);
+     !gen_portsContainEmergency(screenPort);
+     !gen_portsContainEmergency(WCU1Port);
+     !gen_portsContainEmergency(WCU2Port)).
 
-error gen_noEmergencyBubbleToTmc(Train t) <->
+error gen_incorrectEvacuationBubbleWithinStoppingWindow(Train t) <->
     trainEvent(t, e),
     EmergencyStop(e),
-    !hasEmergencyBubble(TMCPort).
-
-error gen_noEmergencyBubbleToPic(Train t) <->
-    trainEvent(t, e),
-    EmergencyStop(e),
-    !hasEmergencyBubble(PICPort).
-
-error gen_noEmergencyBubbleToOscr(Train t) <->
-    trainEvent(t, e),
-    EmergencyStop(e),
-    !hasEmergencyBubble(screenPort).
-
-error gen_noEmergencyBubbleToWcu1(Train t) <->
-    trainEvent(t, e),
-    EmergencyStop(e),
-    !hasEmergencyBubble(WCU1Port).
-
-error gen_noEmergencyBubbleToWcu2(Train t) <->
-    trainEvent(t, e),
-    EmergencyStop(e),
-    !hasEmergencyBubble(WCU2Port).
-
-error gen_incorrectDoorsState(Train t) <->
-    trainEvent(t, e),
     emergencyAtPlatform(e),
-    emDoors(e, d),
-    DoorsClosed(d).
+    (emDoors(e, DoorsClosed);
+     !gen_portsContainEvacuation(PICPort);
+     !gen_portsContainEvacuation(screenPort)).
 
-error gen_unallowedEvacuationBubble(Train t) <->
-    trainEvent(t, e),
+error gen_incorrectEvacuationBubbleOutsideStoppingWindow(EmergencyStop e) <->
     emergencyBetweenPlatforms(e),
-    hasEvacuationBubble(PICPort);
-    trainEvent(t, e),
-    emergencyBetweenPlatforms(e),
-    hasEvacuationBubble(screenPort).
+    emDoors(e, DoorsOpen),
+    EvacuationBubble(_).
 
-error gen_regularBubbleDuringEmergency() <->
-    hasEmergencyStop(), ArrivalEvent(_);
-    hasEmergencyStop(), DepartureEvent(_);
-    hasEmergencyStop(), StandstillBubble(_. 
+error gen_invalidRegularBubbleDuringEmergency() <->
+    hasEmergencyStop(), !regularBubbleDuringEmergency().

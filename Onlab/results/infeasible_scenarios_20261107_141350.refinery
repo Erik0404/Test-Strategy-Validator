@@ -1,0 +1,159 @@
+% Negative test scenarios excluded as formally infeasible.
+% Each scenario below is inconsistent with the system metamodel ALONE (the generated
+% constraints are not included). Reproduce one by saving it to a file and running:
+%   gradlew run --args="explore <file> 1"
+% Refinery answers: "Model generation problem is unsatisfiable".
+
+% REQ_01 | run 3 | iteration 1 | TS3 ["!C1"]
+MovingSpeed(ms).
+Arrival(arr).
+Train(t1).
+trainEvent(t1, arr).
+arrSpeed(arr, ms).
+
+% REQ_02 | run 1 | iteration 1 | TS3 ["!C2"]
+Arrival(a).
+arrDoors(a, d_closed).
+DoorsClosed(d_closed).
+trainEvent(t1, a).
+
+% REQ_02 | run 2 | iteration 2 | TS2 ["C1","!C2"]
+Arrival(newArrival).
+DoorsClosed(newDoorsClosed).
+ZeroSpeed(newZeroSpeed).
+WithinStoppingWindow(newStoppingWindow).
+arrSpeed(newArrival, newZeroSpeed).
+arrWindow(newArrival, newStoppingWindow).
+arrDoors(newArrival, newDoorsClosed).
+trainEvent(t1, newArrival).
+
+% REQ_02 | run 2 | iteration 2 | TS3 ["!C1","C2"]
+Departure(newDeparture).
+DoorsOpen(newDoorsOpen).
+MovingSpeed(newMovingSpeed).
+OutsideStoppingWindow(newOutsideStoppingWindow).
+depSpeed(newDeparture, newMovingSpeed).
+depWindow(newDeparture, newOutsideStoppingWindow).
+depDoors(newDeparture, newDoorsOpen).
+trainEvent(t1, newDeparture).
+
+% REQ_02 | run 3 | iteration 1 | TS2 ["C1","!C2"]
+Arrival(arrival).
+ZeroSpeed(zeroSpeed).
+WithinStoppingWindow(withinWindow).
+DoorsClosed(doorsClosed).
+arrSpeed(arrival, zeroSpeed).
+arrWindow(arrival, withinWindow).
+arrDoors(arrival, doorsClosed).
+trainEvent(t1, arrival).
+
+% REQ_02 | run 4 | iteration 1 | TS2 ["C1","!C2"]
+Arrival(arrEvent).
+ZeroSpeed(zSpeed).
+WithinStoppingWindow(wsWindow).
+DoorsClosed(dClosed).
+arrSpeed(arrEvent, zSpeed).
+arrWindow(arrEvent, wsWindow).
+arrDoors(arrEvent, dClosed).
+trainEvent(t1, arrEvent).
+
+% REQ_02 | run 5 | iteration 1 | TS3 ["C1","!C2"]
+Arrival(arrivalEvent2).
+ZeroSpeed(zeroSpeed2).
+WithinStoppingWindow(stoppingWindow3).
+DoorsClosed(doorsClosed2).
+arrSpeed(arrivalEvent2, zeroSpeed2).
+arrWindow(arrivalEvent2, stoppingWindow3).
+arrDoors(arrivalEvent2, doorsClosed2).
+trainEvent(t1, arrivalEvent2).
+
+% REQ_03 | run 1 | iteration 1 | TS3 ["!C2"]
+Departure(dep1).
+trainEvent(t1, dep1).
+ZeroSpeed(zs1).
+depSpeed(dep1, zs1).
+
+% REQ_03 | run 2 | iteration 1 | TS3 ["!C2"]
+Departure(dep2).
+ZeroSpeed(zs2).
+trainEvent(t1, dep2).
+depSpeed(dep2, zs2).
+
+% REQ_03 | run 3 | iteration 2 | TS2 ["!C1"]
+Arrival(arrival1).
+trainEvent(t1, arrival1).
+MovingSpeed(ms1).
+depSpeed(arrival1, ms1).
+
+% REQ_03 | run 3 | iteration 2 | TS3 ["C1","!C2"]
+Departure(dep1).
+ZeroSpeed(zs1).
+depSpeed(dep1, zs1).
+trainEvent(t1, dep1).
+
+% REQ_03 | run 4 | iteration 2 | TS2 ["!C1","C2","!E1"]
+MovingSpeed(movingSpeed).
+Arrival(arrivalEventInstance).
+depSpeed(arrivalEventInstance, movingSpeed).
+trainEvent(t1, arrivalEventInstance).
+
+% REQ_03 | run 4 | iteration 2 | TS3 ["C1","!C2","!E1"]
+DepartureEvent(depEvent).
+ZeroSpeed(zeroSpeed).
+Departure(depEventInstance).
+depSpeed(depEventInstance, zeroSpeed).
+trainEvent(t1, depEventInstance).
+
+% REQ_03 | run 5 | iteration 1 | TS2 ["!C1"]
+Arrival(arrEvent).
+trainEvent(t1, arrEvent).
+depSpeed(arrEvent, movingSpeed).
+MovingSpeed(movingSpeed).
+Port(TMCPort).
+isTargetTmc(TMCPort).
+
+% REQ_04 | run 3 | iteration 1 | TS2 ["C1","!C2"]
+Arrival(arrivalEvent).
+trainEvent(t1, arrivalEvent).
+WithinStoppingWindow(withinWindow).
+ZeroSpeed(zeroSpeed).
+DoorsOpen(doorsOpen).
+arrSpeed(arrivalEvent, zeroSpeed).
+arrWindow(arrivalEvent, withinWindow).
+arrDoors(arrivalEvent, doorsOpen).
+ArrivalEvent(arrivalBubble1).
+allowedBubbles(TMCPort, arrivalBubble1).
+!allowedBubbles(screenPort, arrivalBubble1).
+
+% REQ_04 | run 3 | iteration 1 | TS3 ["C1","!C3"]
+Arrival(arrivalEvent).
+trainEvent(t1, arrivalEvent).
+WithinStoppingWindow(withinWindow).
+ZeroSpeed(zeroSpeed).
+DoorsOpen(doorsOpen).
+arrSpeed(arrivalEvent, zeroSpeed).
+arrWindow(arrivalEvent, withinWindow).
+arrDoors(arrivalEvent, doorsOpen).
+ArrivalEvent(arrivalBubble).
+DepartureEvent(departureBubble).
+allowedBubbles(TMCPort, arrivalBubble).
+allowedBubbles(screenPort, departureBubble).
+
+% REQ_05 | run 1 | iteration 1 | TS3 ["!C2"]
+Departure(dep).
+trainEvent(t1, dep).
+depDoors(dep, do).
+DoorsOpen(do).
+
+% REQ_05 | run 2 | iteration 2 | TS2 ["!C1","C2"]
+Arrival(a1).
+trainEvent(t1, a1).
+DoorsClosed(dc).
+arrDoors(a1, dc).
+
+% REQ_05 | run 2 | iteration 2 | TS3 ["C1","!C2"]
+Departure(d1).
+trainEvent(t1, d1).
+DoorsOpen(do).
+depDoors(d1, do).
+

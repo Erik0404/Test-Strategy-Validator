@@ -1,0 +1,40 @@
+{
+  "benchmark_csv": "results\\benchmark_results_20261107_141350.csv",
+  "manual_csv": "results\\manual_coverage_20261107_141350.csv",
+  "runs": 30,
+  "successful_runs": 17,
+  "success_rate": 0.5666666666666667,
+  "mean_iterations_successful": 1.2352941176470589,
+  "excluded_infeasible_negatives": 19,
+  "runs_with_excluded_scenarios": 14,
+  "llm": {
+    "pooled_recall_vs_manual": 0.8785714285714286,
+    "n": 17,
+    "pearson_r": 0.9497221635973991,
+    "pearson_p": 5.773592692209756e-09,
+    "spearman_rho": 0.7061267297367756,
+    "spearman_p": 0.0015349797775751984
+  },
+  "solver_only": {
+    "pooled_recall_vs_manual": 0.4807692307692308,
+    "n": 14,
+    "pearson_r": -0.6111111111111112,
+    "pearson_p": 0.02024338060148374,
+    "spearman_rho": -0.6370220572706061,
+    "spearman_p": 0.01428173946105233
+  },
+  "category_coverage_pct": {
+    "llm/cond_neg": 60.0,
+    "llm/cond_pos": 100.0,
+    "llm/exp_neg": 79.16666666666666,
+    "llm/exp_pos": 100.0,
+    "manual/cond_neg": 100.0,
+    "manual/cond_pos": 100.0,
+    "manual/exp_neg": 100.0,
+    "manual/exp_pos": 100.0,
+    "solver/cond_neg": 53.84615384615385,
+    "solver/cond_pos": 46.15384615384615,
+    "solver/exp_neg": 41.17647058823529,
+    "solver/exp_pos": 48.57142857142857
+  }
+}

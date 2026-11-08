@@ -1,0 +1,19 @@
+% \usepackage{booktabs}
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{A benchmark összesítése követelményenként. Max: a kézi referencia-készlet lefedettsége; Iter.: a formálisan érvényes válaszig szükséges LLM-hívások átlagos száma; a lefedettségek a sikeres futások átlagai (és szórásai).}
+  \label{tab:benchmark-summary}
+  \begin{tabular}{llrrrrcrrr}
+    \toprule
+    Köv. & Nehézség & Elem & Max & Siker & Iter. & Szcen. (LLM / kézi) & LLM lef. [\%] & Csak solver [\%] & Token [ezer] \\
+    \midrule
+    REQ\_01 & Könnyű & 7 & 7 & 3/5 & 1,0 & 4,0 / 2 & 90,5 $\pm$ 16,5 & 71,4 & 11,6 \\
+    REQ\_02 & Közepes & 7 & 7 & 5/5 & 1,2 & 1,8 / 2 & 91,4 $\pm$ 19,2 & 57,1 & 7,1 \\
+    REQ\_03 & Közepes & 7 & 7 & 5/5 & 1,4 & 1,6 / 2 & 74,3 $\pm$ 23,5 & 42,9 & 8,3 \\
+    REQ\_04 & Nehéz & 7 & 7 & 1/5 & 1,0 & 1,0 / 2 & 85,7 & 85,7 & 16,8 \\
+    REQ\_05 & Extrém & 10 & 10 & 2/5 & 1,5 & 1,5 / 2 & 90,0 $\pm$ 14,1 & 20,0 & 14,9 \\
+    REQ\_06 & Komplex & 22 & 22 & 1/5 & 1,0 & 4,0 / 3 & 100,0 & n. a. & 18,9 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
